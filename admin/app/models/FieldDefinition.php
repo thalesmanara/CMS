@@ -11,8 +11,10 @@ final class FieldDefinition
 {
     public const OWNER_PAGE = 'page';
 
+    public const OWNER_POST = 'post';
+
     /** @return list<array<string, mixed>> */
-    public function listByPageId(int $pageId): array
+    public function listByOwner(string $ownerType, int $ownerId): array
     {
         $pdo = Database::pdo();
         $stmt = $pdo->prepare(
@@ -21,8 +23,20 @@ final class FieldDefinition
              WHERE owner_type = :ot AND owner_id = :oid
              ORDER BY order_index ASC, id ASC'
         );
-        $stmt->execute(['ot' => self::OWNER_PAGE, 'oid' => $pageId]);
+        $stmt->execute(['ot' => $ownerType, 'oid' => $ownerId]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /** @return list<array<string, mixed>> */
+    public function listByPageId(int $pageId): array
+    {
+        return $this->listByOwner(self::OWNER_PAGE, $pageId);
+    }
+
+    /** @return list<array<string, mixed>> */
+    public function listByPostId(int $postId): array
+    {
+        return $this->listByOwner(self::OWNER_POST, $postId);
     }
 
     public function findById(int $id): ?array
@@ -40,7 +54,7 @@ final class FieldDefinition
         return $row !== false ? $row : null;
     }
 
-    public function fieldKeyExistsOnPage(int $pageId, string $key, ?int $excludeId = null): bool
+    public function fieldKeyExists(string $ownerType, int $ownerId, string $key, ?int $excludeId = null): bool
     {
         $key = trim($key);
         if ($key === '') {
@@ -49,7 +63,7 @@ final class FieldDefinition
         $pdo = Database::pdo();
         $sql = 'SELECT 1 FROM revita_crm_field_definitions
                 WHERE owner_type = :ot AND owner_id = :oid AND field_key = :fk';
-        $p = ['ot' => self::OWNER_PAGE, 'oid' => $pageId, 'fk' => $key];
+        $p = ['ot' => $ownerType, 'oid' => $ownerId, 'fk' => $key];
         if ($excludeId !== null) {
             $sql .= ' AND id <> :ex';
             $p['ex'] = $excludeId;
@@ -60,7 +74,17 @@ final class FieldDefinition
         return (bool) $stmt->fetchColumn();
     }
 
-    public function nextOrderIndex(int $pageId): int
+    public function fieldKeyExistsOnPage(int $pageId, string $key, ?int $excludeId = null): bool
+    {
+        return $this->fieldKeyExists(self::OWNER_PAGE, $pageId, $key, $excludeId);
+    }
+
+    public function fieldKeyExistsOnPost(int $postId, string $key, ?int $excludeId = null): bool
+    {
+        return $this->fieldKeyExists(self::OWNER_POST, $postId, $key, $excludeId);
+    }
+
+    public function nextOrderIndexForOwner(string $ownerType, int $ownerId): int
     {
         $pdo = Database::pdo();
         $stmt = $pdo->prepare(
@@ -68,17 +92,28 @@ final class FieldDefinition
              FROM revita_crm_field_definitions
              WHERE owner_type = :ot AND owner_id = :oid'
         );
-        $stmt->execute(['ot' => self::OWNER_PAGE, 'oid' => $pageId]);
+        $stmt->execute(['ot' => $ownerType, 'oid' => $ownerId]);
         return (int) $stmt->fetchColumn();
     }
 
-    public function insert(
-        int $pageId,
+    public function nextOrderIndex(int $pageId): int
+    {
+        return $this->nextOrderIndexForOwner(self::OWNER_PAGE, $pageId);
+    }
+
+    public function nextOrderIndexForPost(int $postId): int
+    {
+        return $this->nextOrderIndexForOwner(self::OWNER_POST, $postId);
+    }
+
+    public function insertForOwner(
+        string $ownerType,
+        int $ownerId,
         string $fieldKey,
         string $label,
         string $fieldType,
         int $orderIndex
-      ): int {
+    ): int {
         $pdo = Database::pdo();
         $stmt = $pdo->prepare(
             'INSERT INTO revita_crm_field_definitions
@@ -86,8 +121,8 @@ final class FieldDefinition
              VALUES (:ot, :oid, :fk, :lb, :ft, :ord, NOW())'
         );
         $stmt->execute([
-            'ot' => self::OWNER_PAGE,
-            'oid' => $pageId,
+            'ot' => $ownerType,
+            'oid' => $ownerId,
             'fk' => $fieldKey,
             'lb' => $label,
             'ft' => $fieldType,
@@ -96,8 +131,18 @@ final class FieldDefinition
         return (int) $pdo->lastInsertId();
     }
 
+    public function insert(int $pageId, string $fieldKey, string $label, string $fieldType, int $orderIndex): int
+    {
+        return $this->insertForOwner(self::OWNER_PAGE, $pageId, $fieldKey, $label, $fieldType, $orderIndex);
+    }
+
+    public function insertForPost(int $postId, string $fieldKey, string $label, string $fieldType, int $orderIndex): int
+    {
+        return $this->insertForOwner(self::OWNER_POST, $postId, $fieldKey, $label, $fieldType, $orderIndex);
+    }
+
     /** @param list<int> $orderedIds */
-    public function reorderOnPage(int $pageId, array $orderedIds): void
+    public function reorderOnOwner(string $ownerType, int $ownerId, array $orderedIds): void
     {
         $pdo = Database::pdo();
         $ord = 0;
@@ -110,8 +155,20 @@ final class FieldDefinition
                 'UPDATE revita_crm_field_definitions SET order_index = :ord, updated_at = NOW()
                  WHERE id = :id AND owner_type = :ot AND owner_id = :pid'
             );
-            $stmt->execute(['ord' => $ord++, 'id' => $fid, 'ot' => self::OWNER_PAGE, 'pid' => $pageId]);
+            $stmt->execute(['ord' => $ord++, 'id' => $fid, 'ot' => $ownerType, 'pid' => $ownerId]);
         }
+    }
+
+    /** @param list<int> $orderedIds */
+    public function reorderOnPage(int $pageId, array $orderedIds): void
+    {
+        $this->reorderOnOwner(self::OWNER_PAGE, $pageId, $orderedIds);
+    }
+
+    /** @param list<int> $orderedIds */
+    public function reorderOnPost(int $postId, array $orderedIds): void
+    {
+        $this->reorderOnOwner(self::OWNER_POST, $postId, $orderedIds);
     }
 
     public function deleteRow(int $id): void

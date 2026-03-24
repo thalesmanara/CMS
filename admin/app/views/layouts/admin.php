@@ -87,7 +87,7 @@ $isAdmin = Auth::isAdmin();
           <a class="<?= $nav === 'categories' ? 'active' : '' ?>" href="<?= Escape::html(Url::to('/categories')) ?>">Categorias</a>
         <?php endif; ?>
         <a class="<?= $nav === 'pages' ? 'active' : '' ?>" href="<?= Escape::html(Url::to('/pages')) ?>">Páginas</a>
-        <a href="#">Postagens <span class="small text-secondary">(em breve)</span></a>
+        <a class="<?= $nav === 'posts' ? 'active' : '' ?>" href="<?= Escape::html(Url::to('/posts')) ?>">Postagens</a>
       </div>
     </nav>
     <main class="col px-0">

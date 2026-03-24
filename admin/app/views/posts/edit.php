@@ -1,0 +1,520 @@
+<?php
+
+declare(strict_types=1);
+
+use Revita\Crm\Helpers\Escape;
+use Revita\Crm\Helpers\Url;
+use Revita\Crm\Services\PageApiSerializer;
+
+/** @var array<string,mixed> $post */
+/** @var list<array<string,mixed>> $blocks */
+/** @var list<array<string,mixed>> $categories */
+/** @var list<array<string,mixed>> $subcategoriesRows */
+/** @var string|null $featuredPreview */
+/** @var string $csrfToken */
+/** @var bool $isAdmin */
+/** @var string|null $flashOk */
+/** @var string|null $flashErr */
+/** @var string|null $metaError */
+/** @var string|null $contentError */
+/** @var string|null $fieldError */
+
+$formContent = 'post-content-form';
+$postId = (int) $post['id'];
+$pubAt = '';
+if (!empty($post['published_at'])) {
+    $ts = strtotime((string) $post['published_at']);
+    if ($ts !== false) {
+        $pubAt = date('Y-m-d\TH:i', $ts);
+    }
+}
+
+if (!function_exists('revita_crm_page_field_label')) {
+    function revita_crm_page_field_label(string $t): string {
+        return match ($t) {
+            'texto' => 'Texto',
+            'foto' => 'Foto',
+            'galeria_fotos' => 'Galeria de fotos',
+            'video' => 'Vídeo',
+            'galeria_videos' => 'Galeria de vídeos',
+            'repetidor' => 'Repetidor',
+            default => $t,
+        };
+    }
+}
+?>
+<?php if (!empty($flashOk)): ?>
+  <div class="alert alert-success"><?= Escape::html($flashOk) ?></div>
+<?php endif; ?>
+<?php if (!empty($flashErr)): ?>
+  <div class="alert alert-danger"><?= Escape::html($flashErr) ?></div>
+<?php endif; ?>
+
+<div class="mb-3">
+  <a href="<?= Escape::html(Url::to('/posts')) ?>" class="text-decoration-none small">← Lista de postagens</a>
+</div>
+
+<h2 class="h5 mb-3">Editar post: <?= Escape::html((string) $post['title']) ?></h2>
+
+<?php if (!empty($metaError)): ?>
+  <div class="alert alert-warning"><?= Escape::html($metaError) ?></div>
+<?php endif; ?>
+
+<form method="post" action="<?= Escape::html(Url::to('/posts/update-meta')) ?>" enctype="multipart/form-data" class="card border-0 shadow-sm p-3 mb-4" style="border-radius:12px;">
+  <input type="hidden" name="_csrf" value="<?= Escape::html($csrfToken) ?>">
+  <input type="hidden" name="id" value="<?= $postId ?>">
+  <div class="row g-2 align-items-end mb-3">
+    <div class="col-md-4">
+      <label class="form-label" for="title">Título</label>
+      <input class="form-control" id="title" name="title" required value="<?= Escape::html((string) $post['title']) ?>">
+    </div>
+    <div class="col-md-3">
+      <label class="form-label" for="slug">Slug</label>
+      <input class="form-control font-monospace" id="slug" name="slug" required pattern="[a-z0-9-]+" value="<?= Escape::html((string) $post['slug']) ?>">
+    </div>
+    <div class="col-md-3">
+      <label class="form-label" for="published_at">Publicado em</label>
+      <input class="form-control" type="datetime-local" id="published_at" name="published_at" value="<?= Escape::html($pubAt) ?>">
+    </div>
+    <div class="col-md-2">
+      <div class="form-check mt-4">
+        <input class="form-check-input" type="checkbox" id="status_published" name="status_published" value="1" <?= (string) $post['status'] === 'published' ? 'checked' : '' ?>>
+        <label class="form-check-label" for="status_published">Publicada</label>
+      </div>
+    </div>
+  </div>
+  <div class="row g-2 align-items-end mb-3">
+    <div class="col-md-4">
+      <label class="form-label" for="category_id">Categoria</label>
+      <select class="form-select" id="category_id" name="category_id" required>
+        <?php foreach ($categories as $c): ?>
+          <option value="<?= (int) $c['id'] ?>" <?= (int) $post['category_id'] === (int) $c['id'] ? 'selected' : '' ?>><?= Escape::html((string) $c['name']) ?></option>
+        <?php endforeach; ?>
+      </select>
+    </div>
+    <div class="col-md-5">
+      <label class="form-label" for="subcategory_id">Subcategoria</label>
+      <select class="form-select" id="subcategory_id" name="subcategory_id" required>
+        <?php foreach ($subcategoriesRows as $s): ?>
+          <option value="<?= (int) $s['id'] ?>" data-category-id="<?= (int) $s['category_id'] ?>" <?= (int) $post['subcategory_id'] === (int) $s['id'] ? 'selected' : '' ?>>
+            <?= Escape::html((string) $s['category_name']) ?> — <?= Escape::html((string) $s['name']) ?>
+          </option>
+        <?php endforeach; ?>
+      </select>
+    </div>
+    <div class="col-md-3 small text-muted pt-2">
+      Autor: <strong><?= Escape::html((string) $post['author_login']) ?></strong>
+    </div>
+  </div>
+  <div class="row g-2 align-items-end">
+    <div class="col-md-6">
+      <label class="form-label" for="featured_image">Imagem destacada</label>
+      <?php if (!empty($featuredPreview)): ?>
+        <p class="mb-1"><img src="<?= Escape::html($featuredPreview) ?>" alt="" style="max-height:100px;border-radius:8px;"></p>
+      <?php endif; ?>
+      <input class="form-control" type="file" id="featured_image" name="featured_image" accept="image/*">
+      <div class="form-check mt-2">
+        <input class="form-check-input" type="checkbox" id="clear_featured" name="clear_featured" value="1">
+        <label class="form-check-label" for="clear_featured">Remover imagem destacada</label>
+      </div>
+    </div>
+    <div class="col-md-3 ms-auto">
+      <button type="submit" class="btn btn-outline-secondary w-100">Salvar dados</button>
+    </div>
+  </div>
+</form>
+<script>
+(function () {
+  var cat = document.getElementById('category_id');
+  var sub = document.getElementById('subcategory_id');
+  if (!cat || !sub) return;
+  function filterSubs() {
+    var cid = cat.value;
+    var opts = sub.querySelectorAll('option');
+    var firstVisible = null;
+    opts.forEach(function (o) {
+      var ok = o.getAttribute('data-category-id') === cid;
+      o.hidden = !ok;
+      o.style.display = ok ? '' : 'none';
+      if (ok && !firstVisible) firstVisible = o;
+    });
+    if (sub.selectedOptions.length && sub.selectedOptions[0].hidden) {
+      if (firstVisible) sub.value = firstVisible.value;
+    }
+  }
+  cat.addEventListener('change', filterSubs);
+  filterSubs();
+})();
+</script>
+
+<form method="post" action="<?= Escape::html(Url::to('/posts/reorder-fields')) ?>" id="form-reorder" class="mb-3">
+  <input type="hidden" name="_csrf" value="<?= Escape::html($csrfToken) ?>">
+  <input type="hidden" name="post_id" value="<?= $postId ?>">
+  <ul class="list-group mb-2" id="sort-fields" style="max-width:640px;">
+    <?php foreach ($blocks as $b): ?>
+      <?php $fid = (int) $b['field']['id']; ?>
+      <li class="list-group-item d-flex justify-content-between align-items-center" data-field-id="<?= $fid ?>">
+        <span><span class="text-muted me-2">↕</span><?= Escape::html((string) $b['field']['label_name']) ?> <small class="text-muted">(<?= Escape::html(revita_crm_page_field_label((string) $b['field']['field_type'])) ?>)</small></span>
+      </li>
+    <?php endforeach; ?>
+  </ul>
+  <div id="reorder-hidden"></div>
+  <button type="button" class="btn btn-sm btn-outline-primary" id="btn-save-order">Aplicar ordem dos campos</button>
+</form>
+
+<form method="post" action="<?= Escape::html(Url::to('/posts/add-field')) ?>" class="card border-0 shadow-sm p-3 mb-4" style="border-radius:12px;">
+  <input type="hidden" name="_csrf" value="<?= Escape::html($csrfToken) ?>">
+  <input type="hidden" name="post_id" value="<?= $postId ?>">
+  <h3 class="h6">Adicionar campo</h3>
+  <?php if (!empty($fieldError)): ?>
+    <div class="alert alert-danger py-2"><?= Escape::html($fieldError) ?></div>
+  <?php endif; ?>
+  <div class="row g-2 align-items-end">
+    <div class="col-md-4">
+      <label class="form-label" for="label_name">Nome (label)</label>
+      <input class="form-control" id="label_name" name="label_name" required placeholder="Ex.: Texto principal">
+    </div>
+    <div class="col-md-3">
+      <label class="form-label" for="field_key">Identificador <span class="text-muted small">(opcional)</span></label>
+      <input class="form-control" id="field_key" name="field_key" pattern="[a-z0-9-]*" placeholder="auto">
+    </div>
+    <div class="col-md-3">
+      <label class="form-label" for="field_type">Tipo</label>
+      <select class="form-select" id="field_type" name="field_type">
+        <?php foreach (['texto', 'foto', 'galeria_fotos', 'video', 'galeria_videos', 'repetidor'] as $ft): ?>
+          <option value="<?= Escape::html($ft) ?>"><?= Escape::html(revita_crm_page_field_label($ft)) ?></option>
+        <?php endforeach; ?>
+      </select>
+    </div>
+    <div class="col-md-2">
+      <button type="submit" class="btn btn-revita w-100">Adicionar</button>
+    </div>
+  </div>
+</form>
+
+<?php if (!empty($contentError)): ?>
+  <div class="alert alert-danger"><?= Escape::html($contentError) ?></div>
+<?php endif; ?>
+
+<form id="<?= Escape::html($formContent) ?>" method="post" action="<?= Escape::html(Url::to('/posts/update-content')) ?>" enctype="multipart/form-data" class="d-none" aria-hidden="true">
+  <input type="hidden" name="_csrf" value="<?= Escape::html($csrfToken) ?>">
+  <input type="hidden" name="post_id" value="<?= $postId ?>">
+</form>
+
+<?php foreach ($blocks as $b): ?>
+  <?php
+    $f = $b['field'];
+    $fid = (int) $f['id'];
+    $ftype = (string) $f['field_type'];
+  ?>
+  <div class="card border-0 shadow-sm mb-4 field-block" style="border-radius:12px;" data-field-id="<?= $fid ?>">
+    <div class="card-header d-flex justify-content-between align-items-center bg-white py-3">
+      <div>
+        <strong><?= Escape::html((string) $f['label_name']) ?></strong>
+        <span class="badge bg-secondary ms-1"><?= Escape::html(revita_crm_page_field_label($ftype)) ?></span>
+        <code class="small ms-1"><?= Escape::html((string) $f['field_key']) ?></code>
+      </div>
+      <?php if ($isAdmin): ?>
+        <form method="post" action="<?= Escape::html(Url::to('/posts/delete-field')) ?>" class="m-0" onsubmit="return confirm('Remover este campo e seus dados?');">
+          <input type="hidden" name="_csrf" value="<?= Escape::html($csrfToken) ?>">
+          <input type="hidden" name="post_id" value="<?= $postId ?>">
+          <input type="hidden" name="field_id" value="<?= $fid ?>">
+          <button type="submit" class="btn btn-sm btn-outline-danger">Excluir campo</button>
+        </form>
+      <?php endif; ?>
+    </div>
+    <div class="card-body">
+      <?php if ($b['kind'] === 'scalar'): ?>
+        <?php
+          $v = $b['value'];
+          $mid = null;
+          $galIds = [];
+          $vidJson = '';
+          if ($ftype === 'foto' && $v && !empty($v['value_media_ids_json'])) {
+            $tmp = json_decode((string) $v['value_media_ids_json'], true);
+            if (is_array($tmp) && isset($tmp[0])) {
+              $mid = (int) $tmp[0];
+            }
+          }
+          if ($ftype === 'galeria_fotos' && $v && !empty($v['value_media_ids_json'])) {
+            $tmp = json_decode((string) $v['value_media_ids_json'], true);
+            if (is_array($tmp)) {
+              $galIds = array_values(array_filter(array_map('intval', $tmp), static fn (int $x) => $x > 0));
+            }
+          }
+          if (($ftype === 'video' || $ftype === 'galeria_videos') && $v && !empty($v['value_mixed_json'])) {
+            $vidJson = (string) $v['value_mixed_json'];
+          }
+        ?>
+        <?php if ($ftype === 'texto'): ?>
+          <textarea class="form-control" name="fv_text_<?= $fid ?>" form="<?= Escape::html($formContent) ?>" rows="6"><?= $v ? Escape::html((string) ($v['value_text'] ?? '')) : '' ?></textarea>
+        <?php elseif ($ftype === 'foto'): ?>
+          <?php if ($mid): ?>
+            <?php $mrow = (new \Revita\Crm\Models\Media())->findById($mid); ?>
+            <?php if ($mrow): ?>
+              <p class="small"><img src="<?= Escape::html(PageApiSerializer::mediaPublicUrl((string) $mrow['relative_path'])) ?>" alt="" style="max-height:120px;"></p>
+            <?php endif; ?>
+          <?php endif; ?>
+          <input type="file" class="form-control" name="file_field_<?= $fid ?>" form="<?= Escape::html($formContent) ?>" accept="image/*">
+          <div class="form-check mt-2">
+            <input class="form-check-input" type="checkbox" name="clear_foto_<?= $fid ?>" value="1" id="cl_<?= $fid ?>" form="<?= Escape::html($formContent) ?>">
+            <label class="form-check-label small" for="cl_<?= $fid ?>">Remover imagem</label>
+          </div>
+        <?php elseif ($ftype === 'galeria_fotos'): ?>
+          <input type="hidden" name="existing_gal_<?= $fid ?>" form="<?= Escape::html($formContent) ?>" value="<?= Escape::html(json_encode($galIds, JSON_UNESCAPED_UNICODE)) ?>">
+          <p class="small text-muted">Novas imagens serão acrescentadas às existentes.</p>
+          <input type="file" class="form-control" name="gal_<?= $fid ?>[]" form="<?= Escape::html($formContent) ?>" accept="image/*" multiple>
+        <?php elseif ($ftype === 'video'): ?>
+          <?php
+            $vsrc = 'upload';
+            $vyt = '';
+            if ($vidJson !== '') {
+              $dj = json_decode($vidJson, true);
+              if (is_array($dj) && ($dj['source'] ?? '') === 'youtube') {
+                $vsrc = 'youtube';
+                $vyt = (string) ($dj['youtube_url'] ?? '');
+              }
+            }
+          ?>
+          <select class="form-select mb-2" name="vid_src_<?= $fid ?>" form="<?= Escape::html($formContent) ?>" style="max-width:220px;">
+            <option value="upload" <?= $vsrc === 'upload' ? 'selected' : '' ?>>Arquivo (upload)</option>
+            <option value="youtube" <?= $vsrc === 'youtube' ? 'selected' : '' ?>>YouTube</option>
+          </select>
+          <input type="url" class="form-control mb-2" name="vid_yt_<?= $fid ?>" form="<?= Escape::html($formContent) ?>" placeholder="URL do YouTube" value="<?= Escape::html($vyt) ?>" style="max-width:480px;">
+          <input type="file" class="form-control" name="vid_file_<?= $fid ?>" form="<?= Escape::html($formContent) ?>" accept="video/*">
+        <?php elseif ($ftype === 'galeria_videos'): ?>
+          <?php
+            $gvItems = [];
+            if ($vidJson !== '') {
+              $arr = json_decode($vidJson, true);
+              if (is_array($arr)) {
+                $gvItems = $arr;
+              }
+            }
+            $nRows = max(1, count($gvItems) + 1);
+          ?>
+          <?php for ($gi = 0; $gi < $nRows; $gi++): ?>
+            <?php
+              $gvr = $gvItems[$gi] ?? [];
+              $gsrc = (is_array($gvr) && ($gvr['source'] ?? '') === 'youtube') ? 'youtube' : 'upload';
+              $gyt = is_array($gvr) ? (string) ($gvr['youtube_url'] ?? '') : '';
+            ?>
+            <div class="row g-2 mb-2 align-items-center border rounded p-2">
+              <div class="col-auto">
+                <select class="form-select form-select-sm" name="gv_src[<?= $fid ?>][]" form="<?= Escape::html($formContent) ?>">
+                  <option value="upload" <?= $gsrc === 'upload' ? 'selected' : '' ?>>Upload</option>
+                  <option value="youtube" <?= $gsrc === 'youtube' ? 'selected' : '' ?>>YouTube</option>
+                </select>
+              </div>
+              <div class="col">
+                <input class="form-control form-control-sm" type="url" name="gv_yt[<?= $fid ?>][]" form="<?= Escape::html($formContent) ?>" placeholder="URL YouTube" value="<?= Escape::html($gyt) ?>">
+              </div>
+              <div class="col">
+                <input type="file" class="form-control form-control-sm" name="gv_file_<?= $fid ?>[]" form="<?= Escape::html($formContent) ?>" accept="video/*">
+              </div>
+            </div>
+          <?php endfor; ?>
+        <?php endif; ?>
+
+      <?php elseif ($b['kind'] === 'repetidor'): ?>
+        <?php if (empty($b['rep_id'])): ?>
+          <p class="text-warning small">Repetidor inconsistente. Remova e crie novamente.</p>
+        <?php else: ?>
+          <?php $rid = (int) $b['rep_id']; ?>
+          <div class="mb-3">
+            <h4 class="h6">Subcampos</h4>
+            <ul class="list-unstyled small mb-2">
+              <?php foreach ($b['subfields'] as $sf): ?>
+                <li class="d-flex justify-content-between align-items-center border-bottom py-1">
+                  <span><?= Escape::html((string) $sf['label_name']) ?> <code><?= Escape::html((string) $sf['field_key']) ?></code> (<?= Escape::html(revita_crm_page_field_label((string) $sf['field_type'])) ?>)</span>
+                  <?php if ($isAdmin): ?>
+                    <form method="post" action="<?= Escape::html(Url::to('/posts/rep-del-sub')) ?>" class="m-0" onsubmit="return confirm('Remover subcampo?');">
+                      <input type="hidden" name="_csrf" value="<?= Escape::html($csrfToken) ?>">
+                      <input type="hidden" name="post_id" value="<?= $postId ?>">
+                      <input type="hidden" name="subfield_id" value="<?= (int) $sf['id'] ?>">
+                      <button type="submit" class="btn btn-link btn-sm text-danger p-0">remover</button>
+                    </form>
+                  <?php endif; ?>
+                </li>
+              <?php endforeach; ?>
+            </ul>
+            <form method="post" action="<?= Escape::html(Url::to('/posts/rep-add-sub')) ?>" class="row g-2 align-items-end">
+              <input type="hidden" name="_csrf" value="<?= Escape::html($csrfToken) ?>">
+              <input type="hidden" name="post_id" value="<?= $postId ?>">
+              <input type="hidden" name="field_definition_id" value="<?= $fid ?>">
+              <div class="col-md-3">
+                <input class="form-control form-control-sm" name="sub_label" placeholder="Nome do subcampo" required>
+              </div>
+              <div class="col-md-2">
+                <input class="form-control form-control-sm" name="sub_key" placeholder="id (opcional)" pattern="[a-z0-9-]*">
+              </div>
+              <div class="col-md-3">
+                <select class="form-select form-select-sm" name="sub_type">
+                  <?php foreach (['texto', 'foto', 'galeria_fotos', 'video', 'galeria_videos'] as $ft): ?>
+                    <option value="<?= $ft ?>"><?= Escape::html(revita_crm_page_field_label($ft)) ?></option>
+                  <?php endforeach; ?>
+                </select>
+              </div>
+              <div class="col-md-2">
+                <button type="submit" class="btn btn-sm btn-outline-secondary">+ Subcampo</button>
+              </div>
+            </form>
+          </div>
+
+          <form method="post" action="<?= Escape::html(Url::to('/posts/rep-add-item')) ?>" class="mb-3">
+            <input type="hidden" name="_csrf" value="<?= Escape::html($csrfToken) ?>">
+            <input type="hidden" name="post_id" value="<?= $postId ?>">
+            <input type="hidden" name="field_definition_id" value="<?= $fid ?>">
+            <button type="submit" class="btn btn-sm btn-revita">+ Item no repetidor</button>
+          </form>
+
+          <?php foreach ($b['items'] as $itemBundle): ?>
+            <?php
+              $it = $itemBundle['item'];
+              $iid = (int) $it['id'];
+              $vmap = $itemBundle['values'];
+            ?>
+            <div class="border rounded p-3 mb-3 bg-light">
+              <div class="d-flex justify-content-between mb-2">
+                <strong class="small">Item #<?= $iid ?></strong>
+                <form method="post" action="<?= Escape::html(Url::to('/posts/rep-del-item')) ?>" class="m-0" onsubmit="return confirm('Remover este item?');">
+                  <input type="hidden" name="_csrf" value="<?= Escape::html($csrfToken) ?>">
+                  <input type="hidden" name="post_id" value="<?= $postId ?>">
+                  <input type="hidden" name="item_id" value="<?= $iid ?>">
+                  <button type="submit" class="btn btn-sm btn-outline-danger">Excluir item</button>
+                </form>
+              </div>
+              <?php foreach ($b['subfields'] as $sf): ?>
+                <?php
+                  $sid = (int) $sf['id'];
+                  $st = (string) $sf['field_type'];
+                  $vr = $vmap[$sid] ?? null;
+                ?>
+                <div class="mb-3 pb-2 border-bottom">
+                  <label class="form-label small mb-1"><?= Escape::html((string) $sf['label_name']) ?></label>
+                  <?php if ($st === 'texto'): ?>
+                    <input class="form-control form-control-sm" name="rp_<?= $iid ?>_<?= $sid ?>" form="<?= Escape::html($formContent) ?>"
+                           value="<?= $vr ? Escape::html((string) ($vr['value_text'] ?? '')) : '' ?>">
+                  <?php elseif ($st === 'foto'): ?>
+                    <?php
+                      $pm = [];
+                      if ($vr && !empty($vr['value_media_ids_json'])) {
+                        $j = json_decode((string) $vr['value_media_ids_json'], true);
+                        if (is_array($j) && isset($j[0])) {
+                          $pm = (new \Revita\Crm\Models\Media())->findById((int) $j[0]);
+                        }
+                      }
+                    ?>
+                    <?php if ($pm): ?>
+                      <p class="mb-1"><img src="<?= Escape::html(PageApiSerializer::mediaPublicUrl((string) $pm['relative_path'])) ?>" alt="" style="max-height:72px;"></p>
+                    <?php endif; ?>
+                    <input type="file" class="form-control form-control-sm" name="rpfile_<?= $iid ?>_<?= $sid ?>" form="<?= Escape::html($formContent) ?>" accept="image/*">
+                    <div class="form-check mt-1">
+                      <input class="form-check-input" type="checkbox" name="rp_clear_foto_<?= $iid ?>_<?= $sid ?>" value="1" id="rc_<?= $iid ?>_<?= $sid ?>" form="<?= Escape::html($formContent) ?>">
+                      <label class="form-check-label small" for="rc_<?= $iid ?>_<?= $sid ?>">Remover</label>
+                    </div>
+                  <?php elseif ($st === 'galeria_fotos'): ?>
+                    <?php
+                      $ig = [];
+                      if ($vr && !empty($vr['value_media_ids_json'])) {
+                        $xj = json_decode((string) $vr['value_media_ids_json'], true);
+                        if (is_array($xj)) {
+                          $ig = array_values(array_filter(array_map('intval', $xj), static fn (int $x) => $x > 0));
+                        }
+                      }
+                    ?>
+                    <input type="hidden" name="rp_gal_existing_<?= $iid ?>_<?= $sid ?>" form="<?= Escape::html($formContent) ?>" value="<?= Escape::html(json_encode($ig, JSON_UNESCAPED_UNICODE)) ?>">
+                    <input type="file" class="form-control form-control-sm" name="rp_gal_<?= $iid ?>_<?= $sid ?>[]" form="<?= Escape::html($formContent) ?>" accept="image/*" multiple>
+                  <?php elseif ($st === 'video'): ?>
+                    <?php
+                      $rs = 'upload';
+                      $ryt = '';
+                      if ($vr && !empty($vr['value_mixed_json'])) {
+                        $dj = json_decode((string) $vr['value_mixed_json'], true);
+                        if (is_array($dj) && ($dj['source'] ?? '') === 'youtube') {
+                          $rs = 'youtube';
+                          $ryt = (string) ($dj['youtube_url'] ?? '');
+                        }
+                      }
+                    ?>
+                    <select class="form-select form-select-sm mb-1" name="rp_vid_src_<?= $iid ?>_<?= $sid ?>" form="<?= Escape::html($formContent) ?>" style="max-width:180px;">
+                      <option value="upload" <?= $rs === 'upload' ? 'selected' : '' ?>>Upload</option>
+                      <option value="youtube" <?= $rs === 'youtube' ? 'selected' : '' ?>>YouTube</option>
+                    </select>
+                    <input type="url" class="form-control form-control-sm mb-1" name="rp_vid_yt_<?= $iid ?>_<?= $sid ?>" form="<?= Escape::html($formContent) ?>" value="<?= Escape::html($ryt) ?>" placeholder="URL YouTube">
+                    <input type="file" class="form-control form-control-sm" name="rp_vid_file_<?= $iid ?>_<?= $sid ?>" form="<?= Escape::html($formContent) ?>" accept="video/*">
+                  <?php elseif ($st === 'galeria_videos'): ?>
+                    <?php
+                      $rex = [];
+                      if ($vr && !empty($vr['value_mixed_json'])) {
+                        $ja = json_decode((string) $vr['value_mixed_json'], true);
+                        if (is_array($ja)) {
+                          $rex = $ja;
+                        }
+                      }
+                      $nr = max(1, count($rex) + 1);
+                      $px = $iid . '_' . $sid;
+                    ?>
+                    <input type="hidden" name="rp_gv_existing_<?= $iid ?>_<?= $sid ?>" form="<?= Escape::html($formContent) ?>" value="<?= Escape::html(json_encode($rex, JSON_UNESCAPED_UNICODE)) ?>">
+                    <?php for ($ri = 0; $ri < $nr; $ri++): ?>
+                      <?php
+                        $rit = $rex[$ri] ?? [];
+                        $rsrc = (is_array($rit) && ($rit['source'] ?? '') === 'youtube') ? 'youtube' : 'upload';
+                        $ryu = is_array($rit) ? (string) ($rit['youtube_url'] ?? '') : '';
+                      ?>
+                      <div class="row g-1 mb-1">
+                        <div class="col-auto">
+                          <select class="form-select form-select-sm" name="rp_gv_src_<?= $px ?>[]" form="<?= Escape::html($formContent) ?>">
+                            <option value="upload" <?= $rsrc === 'upload' ? 'selected' : '' ?>>Upload</option>
+                            <option value="youtube" <?= $rsrc === 'youtube' ? 'selected' : '' ?>>YouTube</option>
+                          </select>
+                        </div>
+                        <div class="col">
+                          <input class="form-control form-control-sm" type="url" name="rp_gv_yt_<?= $px ?>[]" form="<?= Escape::html($formContent) ?>" value="<?= Escape::html($ryu) ?>" placeholder="YouTube URL">
+                        </div>
+                        <div class="col">
+                          <input type="file" class="form-control form-control-sm" name="rp_gv_file_<?= $iid ?>_<?= $sid ?>[]" form="<?= Escape::html($formContent) ?>" accept="video/*">
+                        </div>
+                      </div>
+                    <?php endfor; ?>
+                  <?php endif; ?>
+                </div>
+              <?php endforeach; ?>
+            </div>
+          <?php endforeach; ?>
+
+          <?php if ($b['items'] === []): ?>
+            <p class="text-muted small">Nenhum item ainda. Use &quot;+ Item no repetidor&quot;.</p>
+          <?php endif; ?>
+
+        <?php endif; ?>
+      <?php endif; ?>
+    </div>
+  </div>
+<?php endforeach; ?>
+
+<div class="sticky-bottom bg-white py-3 border-top mt-4" style="z-index:100;">
+  <button type="submit" form="<?= Escape::html($formContent) ?>" class="btn btn-revita btn-lg">Salvar conteúdo dos campos</button>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+<script>
+(function () {
+  var el = document.getElementById('sort-fields');
+  if (!el || typeof Sortable === 'undefined') return;
+  new Sortable(el, { animation: 150 });
+  var btn = document.getElementById('btn-save-order');
+  if (btn) btn.addEventListener('click', function () {
+    var wrap = document.getElementById('reorder-hidden');
+    wrap.innerHTML = '';
+    el.querySelectorAll('li[data-field-id]').forEach(function (li) {
+      var inp = document.createElement('input');
+      inp.type = 'hidden';
+      inp.name = 'order[]';
+      inp.value = li.getAttribute('data-field-id');
+      wrap.appendChild(inp);
+    });
+    document.getElementById('form-reorder').submit();
+  });
+})();
+</script>

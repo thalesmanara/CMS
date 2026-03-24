@@ -1,0 +1,43 @@
+/* Estilos mínimos para login/instalação — evita CDN (Tracking Prevention / CSP). */
+*, *::before, *::after { box-sizing: border-box; }
+.container { width: 100%; max-width: 520px; margin-left: auto; margin-right: auto; padding-left: 12px; padding-right: 12px; }
+.min-vh-100 { min-height: 100vh; }
+.d-flex { display: flex; }
+.align-items-center { align-items: center; }
+.py-4 { padding-top: 1.5rem; padding-bottom: 1.5rem; }
+.mb-4 { margin-bottom: 1.5rem; }
+.mb-3 { margin-bottom: 1rem; }
+.mb-0 { margin-bottom: 0; }
+.h4 { font-size: 1.25rem; font-weight: 600; margin: 0 0 0.5rem; line-height: 1.3; }
+.w-100 { width: 100%; }
+.mt-3 { margin-top: 1rem; }
+.text-center { text-align: center; }
+.small { font-size: 0.875rem; }
+.text-muted { color: #6c757d; }
+.text-decoration-none { text-decoration: none; }
+.img-fluid { max-width: 100%; height: auto; }
+.card { background: #fff; border-radius: 16px; box-shadow: 0 8px 24px rgba(43, 47, 54, 0.08); border: none; }
+.card-body { padding: 1.5rem; }
+.p-4 { padding: 1.5rem !important; }
+@media (min-width: 768px) {
+  .p-md-5 { padding: 3rem !important; }
+}
+.text-secondary { color: #6c757d; }
+.form-label { display: block; margin-bottom: 0.35rem; font-weight: 500; }
+.form-control {
+  display: block; width: 100%; padding: 0.5rem 0.75rem;
+  font-size: 1rem; line-height: 1.5;
+  border: 1px solid #ced4da; border-radius: 10px;
+  background: #fff;
+}
+.form-control:focus { outline: 0; border-color: var(--revita-orange); box-shadow: 0 0 0 3px rgba(255, 145, 44, 0.2); }
+.btn {
+  display: inline-block; padding: 0.55rem 1.25rem; font-weight: 600; font-size: 1rem;
+  line-height: 1.5; text-align: center; border: 1px solid transparent; border-radius: 10px;
+  cursor: pointer; width: 100%;
+}
+.alert { padding: 0.75rem 1rem; border-radius: 10px; margin-bottom: 1rem; }
+.alert-danger { background: #f8d7da; border: 1px solid #f5c2c7; color: #842029; }
+.alert-success { background: #d1e7dd; border: 1px solid #badbcc; color: #0f5132; }
+.alert-info { background: #cff4fc; border: 1px solid #b6effb; color: #055160; }
+.install-detail { font-size: 0.8rem; opacity: 0.95; word-break: break-word; margin-top: 0.5rem; }

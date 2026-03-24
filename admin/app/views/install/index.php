@@ -11,7 +11,7 @@ use Revita\Crm\Helpers\Escape;
 <p class="text-secondary small mb-4">Informe os dados do MySQL criados manualmente na hospedagem. Após concluir, esta tela deixará de ficar disponível.</p>
 
 <?php if (!empty($error)): ?>
-  <div class="alert alert-danger"><?= Escape::html($error) ?></div>
+  <div class="alert alert-danger"><?= nl2br(Escape::html($error)) ?></div>
 <?php endif; ?>
 
 <form method="post" action="">

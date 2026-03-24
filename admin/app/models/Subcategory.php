@@ -28,7 +28,8 @@ final class Subcategory
     {
         $pdo = Database::pdo();
         $stmt = $pdo->query(
-            'SELECT s.id, s.category_id, s.name, s.slug, s.created_at, s.updated_at, c.name AS category_name
+            'SELECT s.id, s.category_id, s.name, s.slug, s.created_at, s.updated_at,
+                    c.name AS category_name, c.slug AS category_slug
              FROM revita_crm_subcategories s
              INNER JOIN revita_crm_categories c ON c.id = s.category_id
              ORDER BY c.name ASC, s.name ASC, s.id ASC'

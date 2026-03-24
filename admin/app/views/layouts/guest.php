@@ -15,8 +15,7 @@ $assetLogo = Url::to('/assets/img/logoRevita.png');
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title><?= Escape::html($title) ?></title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
-        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+  <link rel="stylesheet" href="<?= Escape::html(Url::to('/assets/css/guest-shell.css')) ?>">
   <style>
     :root {
       --revita-orange: #FF912C;
@@ -52,8 +51,8 @@ $assetLogo = Url::to('/assets/img/logoRevita.png');
     }
   </style>
 </head>
-<body class="d-flex align-items-center min-vh-100 py-4">
-  <div class="container" style="max-width: 520px;">
+<body class="d-flex align-items-center min-vh-100 py-4" style="margin:0;">
+  <div class="container">
     <div class="text-center mb-4">
       <img class="logo-box img-fluid" src="<?= Escape::html($assetLogo) ?>" alt="Revita Comunicação">
     </div>
@@ -64,8 +63,5 @@ $assetLogo = Url::to('/assets/img/logoRevita.png');
     </div>
     <p class="text-center text-secondary small mt-3 mb-0">Revita CRM — uso interno</p>
   </div>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
-          integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
-          crossorigin="anonymous"></script>
 </body>
 </html>

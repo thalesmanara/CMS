@@ -58,8 +58,8 @@ final class InstallController
                 'password' => $pass,
                 'charset' => 'utf8mb4',
             ], true);
-        } catch (PDOException) {
-            Session::flash('install_error', 'Não foi possível conectar ao banco. Verifique os dados.');
+        } catch (PDOException $e) {
+            Session::flash('install_error', self::connectionErrorMessage($e));
             \Revita\Crm\Helpers\Url::redirect('/install');
         }
 
@@ -73,8 +73,9 @@ final class InstallController
 
         try {
             $pdo->exec($sql);
-        } catch (PDOException) {
-            Session::flash('install_error', 'Erro ao criar tabelas: execute o SQL manualmente ou verifique permissões.');
+        } catch (PDOException $e) {
+            $hint = 'Confirme se o usuário tem permissão CREATE/ALTER ou importe manualmente o arquivo database/schema.sql.';
+            Session::flash('install_error', 'Erro ao executar o schema SQL.' . "\n\n" . $hint . "\n\n" . 'Detalhe: ' . $e->getMessage());
             \Revita\Crm\Helpers\Url::redirect('/install');
         }
 
@@ -120,5 +121,38 @@ final class InstallController
             'hash' => $hash,
             'level' => 1,
         ]);
+    }
+
+    private static function connectionErrorMessage(PDOException $e): string
+    {
+        $msg = $e->getMessage();
+        $hints = [];
+        if (str_contains($msg, '1044')) {
+            $hints[] = 'O usuário MySQL não tem permissão sobre o banco informado — associe o usuário ao banco com privilégios adequados no painel da hospedagem.';
+        } elseif (str_contains($msg, '1045')) {
+            $hints[] = 'Usuário ou senha incorretos, ou o usuário MySQL não está autorizado a conectar deste host.';
+        } elseif (stripos($msg, 'Access denied') !== false) {
+            $hints[] = 'Acesso negado ao MySQL — verifique usuário, senha, host permitido e permissões no banco.';
+        }
+        if (str_contains($msg, '1049') || stripos($msg, 'Unknown database') !== false) {
+            $hints[] = 'O banco informado não existe — crie-o no painel da hospedagem antes de instalar.';
+        }
+        if (str_contains($msg, '2002')
+            || stripos($msg, 'Connection refused') !== false
+            || stripos($msg, 'timed out') !== false
+            || stripos($msg, 'No such file or directory') !== false) {
+            $hints[] = 'Host incorreto ou MySQL inacessível (em muitas hospedagens o host não é "localhost" — use o valor indicado pelo provedor).';
+        }
+        if (stripos($msg, 'could not find driver') !== false || stripos($msg, 'pdo_mysql') !== false) {
+            $hints[] = 'A extensão PHP pdo_mysql pode estar desabilitada — ative-a no painel ou peça ao provedor.';
+        }
+
+        $parts = ['Não foi possível conectar ao banco. Verifique os dados.'];
+        if ($hints !== []) {
+            $parts[] = implode(' ', array_unique($hints));
+        }
+        $parts[] = 'Detalhe técnico: ' . $msg;
+
+        return implode("\n\n", $parts);
     }
 }

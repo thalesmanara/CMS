@@ -10,6 +10,7 @@ use Revita\Crm\Models\FieldDefinition;
 use Revita\Crm\Models\FieldValue;
 use Revita\Crm\Models\Media;
 use Revita\Crm\Models\Page;
+use Revita\Crm\Models\Post;
 use Revita\Crm\Models\Repeater;
 
 final class PageApiSerializer
@@ -224,8 +225,23 @@ final class PageApiSerializer
     public static function buildCampos(int $pageId): array
     {
         $fd = new FieldDefinition();
+        return self::buildCamposFromDefinitions($fd->listByPageId($pageId));
+    }
+
+    /** @return list<array<string,mixed>> */
+    public static function buildCamposForPost(int $postId): array
+    {
+        $fd = new FieldDefinition();
+        return self::buildCamposFromDefinitions($fd->listByPostId($postId));
+    }
+
+    /**
+     * @param list<array<string,mixed>> $defs
+     * @return list<array<string,mixed>>
+     */
+    private static function buildCamposFromDefinitions(array $defs): array
+    {
         $fv = new FieldValue();
-        $defs = $fd->listByPageId($pageId);
         $campos = [];
         foreach ($defs as $def) {
             if ((string) $def['field_type'] === 'repetidor') {
@@ -261,5 +277,71 @@ final class PageApiSerializer
             'status' => (string) $row['status'],
             'campos' => self::buildCampos($pid),
         ];
+    }
+
+    public static function featuredImagePublicUrl(?int $mediaId): ?string
+    {
+        if ($mediaId === null || $mediaId < 1) {
+            return null;
+        }
+        $m = (new Media())->findById($mediaId);
+        if ($m === null) {
+            return null;
+        }
+        return self::mediaPublicUrl((string) $m['relative_path']);
+    }
+
+    /** @param array<string,mixed> $row from Post::findBySlug / findById */
+    /** @return array<string, mixed> */
+    public static function postPayloadFromRow(array $row, bool $withCampos): array
+    {
+        $pid = (int) $row['id'];
+        $out = [
+            'id' => $pid,
+            'titulo' => (string) $row['title'],
+            'slug' => (string) $row['slug'],
+            'status' => (string) $row['status'],
+            'publicado_em' => $row['published_at'] !== null ? (string) $row['published_at'] : null,
+            'categoria' => [
+                'id' => (int) $row['category_id'],
+                'nome' => (string) $row['category_name'],
+                'slug' => (string) $row['category_slug'],
+            ],
+            'subcategoria' => [
+                'id' => (int) $row['subcategory_id'],
+                'nome' => (string) $row['subcategory_name'],
+                'slug' => (string) $row['subcategory_slug'],
+            ],
+            'imagem_destaque' => self::featuredImagePublicUrl(
+                isset($row['featured_media_id']) && $row['featured_media_id'] !== null
+                    ? (int) $row['featured_media_id']
+                    : null
+            ),
+            'autor' => [
+                'login' => (string) ($row['author_login'] ?? ''),
+            ],
+        ];
+        if ($withCampos) {
+            $out['campos'] = self::buildCamposForPost($pid);
+        }
+        return $out;
+    }
+
+    /** @return array<string, mixed>|null */
+    public static function postPayloadBySlug(string $slug, bool $publishedOnly): ?array
+    {
+        $slug = trim($slug);
+        if ($slug === '') {
+            return null;
+        }
+        $post = new Post();
+        $row = $post->findBySlug($slug);
+        if ($row === null) {
+            return null;
+        }
+        if ($publishedOnly && (string) $row['status'] !== 'published') {
+            return null;
+        }
+        return self::postPayloadFromRow($row, true);
     }
 }

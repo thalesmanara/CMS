@@ -41,8 +41,9 @@ Etapas concluídas neste repositório (atualizado a cada fase):
 | **5** | **CRUD de usuários** (somente administrador nível 1); **recuperação de senha** por token (`mail()` + link com tempo de expiração) |
 | **6** | **Categorias e subcategorias** (CRUD admin, slugs, exclusão de categoria remove subcategorias vinculadas); deploy oficial em `/admin` com `RewriteBase /admin/` |
 | **7** | **Páginas** com campos dinâmicos (texto, foto, galerias, vídeo upload/YouTube, repetidor com subcampos), **upload** em `uploads/`, ordenação de campos (SortableJS), permissões (admin exclui página/campo/subcampo). **API JSON:** `GET /admin/api/pages`, `GET /admin/api/pages/{slug}`, `?slug=` (somente **publicadas** no site) |
+| **8** | **Postagens:** categoria + subcategoria obrigatórias, imagem destacada, autor (usuário logado na criação), data de publicação, campos dinâmicos (`owner_type = post`), CRUD no painel (`/posts`). **API JSON:** `GET /admin/api/posts` (filtros `?categoria=` e `?subcategoria=` por slug, ou `?slug=` para um post), `GET /admin/api/posts/{slug}`, `GET /admin/api/categories`, `GET /admin/api/subcategories` (somente **publicados** onde aplicável) |
 
-**Próxima etapa sugerida:** módulo de **postagens** (com categorias, imagem destacada, campos dinâmicos) e endpoints **`/admin/api/posts`**, **`/admin/api/categories`**, **`/admin/api/subcategories`**.
+**Próxima etapa sugerida:** evoluir **API** (paginação, cache, autenticação se necessário) ou módulos adicionais conforme demanda da Revita.
 
 > Este `README.md` é atualizado a cada etapa entregue no repositório para refletir o histórico e o escopo atual.
 

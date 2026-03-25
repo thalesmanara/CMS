@@ -88,6 +88,9 @@ $isAdmin = Auth::isAdmin();
         <?php endif; ?>
         <a class="<?= $nav === 'pages' ? 'active' : '' ?>" href="<?= Escape::html(Url::to('/pages')) ?>">Páginas</a>
         <a class="<?= $nav === 'posts' ? 'active' : '' ?>" href="<?= Escape::html(Url::to('/posts')) ?>">Postagens</a>
+        <?php if ($isAdmin): ?>
+          <a class="<?= $nav === 'endpoints' ? 'active' : '' ?>" href="<?= Escape::html(Url::to('/endpoints')) ?>">Endpoints</a>
+        <?php endif; ?>
       </div>
     </nav>
     <main class="col px-0">

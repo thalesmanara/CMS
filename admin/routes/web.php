@@ -7,6 +7,7 @@ use Revita\Crm\Controllers\CategoryController;
 use Revita\Crm\Controllers\DashboardController;
 use Revita\Crm\Controllers\PageController;
 use Revita\Crm\Controllers\PostController;
+use Revita\Crm\Controllers\EndpointsController;
 use Revita\Crm\Controllers\UserController;
 
 return [
@@ -31,6 +32,7 @@ return [
         '/posts' => [PostController::class, 'index'],
         '/posts/create' => [PostController::class, 'createForm'],
         '/posts/edit' => [PostController::class, 'editForm'],
+        '/endpoints' => [EndpointsController::class, 'index'],
     ],
     'POST' => [
         '/login' => [AuthController::class, 'login'],

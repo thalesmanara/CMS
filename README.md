@@ -1,6 +1,6 @@
 # Revita CRM / CMS
 
-CRM/CMS leve em **PHP + MySQL** para a **Revita Comunicação**, pensado para hospedagem compartilhada (Apache, `public_html`, `admin/` na URL). O site público fica na raiz do domínio; o painel em `https://seusite.com.br/admin`.
+CMS leve em **PHP + MySQL** para a **Revita Comunicação**, pensado para hospedagem compartilhada (Apache, `public_html`, `admin/` na URL). O site público fica na raiz do domínio; o painel em `https://seusite.com.br/admin`.
 
 ## Stack
 

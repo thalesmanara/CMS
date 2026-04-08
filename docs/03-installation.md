@@ -1,4 +1,4 @@
-## Instalação — Revita CRM (`/admin`)
+## Instalação — Revita CMS (`/admin`)
 
 ### Requisitos
 - PHP 8.0 ou superior (recomendado 8.1+), extensão **pdo_mysql**

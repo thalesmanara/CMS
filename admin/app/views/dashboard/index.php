@@ -17,7 +17,7 @@ use Revita\Crm\Helpers\Escape;
 
 <div class="card border-0 shadow-sm" style="border-radius: 12px;">
   <div class="card-body p-4">
-    <h2 class="h5 mb-3">Bem-vindo ao CRM</h2>
+    <h2 class="h5 mb-3">Bem-vindo ao CMS</h2>
     <p class="text-secondary mb-0">
       Olá, <strong><?= $user ? Escape::html($user['login']) : '' ?></strong>.
       O instalador e o login estão ativos. Nas próximas etapas entrarão usuários, categorias, páginas, postagens, mídias e API JSON.

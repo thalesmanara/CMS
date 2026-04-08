@@ -2,7 +2,7 @@
 
 ### Premissas
 - Hospedagem compartilhada comum: PHP + Apache + MySQL.
-- Banco é criado manualmente antes da instalação (tabelas serão criadas pelo CRM).
+- Banco é criado manualmente antes da instalação (tabelas serão criadas pelo CMS).
 - Prefixo de tabelas: `revita_crm_` (evita conflitos e facilita manutenção).
 
 ### Usuários e permissões

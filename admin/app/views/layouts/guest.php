@@ -61,7 +61,7 @@ $assetLogo = Url::to('/assets/img/logoRevita.png');
         <?= $content ?>
       </div>
     </div>
-    <p class="text-center text-secondary small mt-3 mb-0">Revita CRM — uso interno</p>
+    <p class="text-center text-secondary small mt-3 mb-0">Revita CMS — uso interno</p>
   </div>
 </body>
 </html>

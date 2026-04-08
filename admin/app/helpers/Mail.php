@@ -17,12 +17,12 @@ final class Mail
             return false;
         }
         $fromEmail = $fromEmail !== '' ? $fromEmail : 'noreply@localhost';
-        $fromName = 'Revita CRM';
+        $fromName = 'Revita CMS';
         $headers = [];
         $headers[] = 'MIME-Version: 1.0';
         $headers[] = 'Content-Type: text/plain; charset=UTF-8';
         $headers[] = 'From: ' . self::encodeHeader($fromName) . ' <' . $fromEmail . '>';
-        $headers[] = 'X-Mailer: Revita-CRM';
+        $headers[] = 'X-Mailer: Revita-CMS';
 
         return @mail($to, self::encodeSubject($subject), $body, implode("\r\n", $headers));
     }

@@ -60,69 +60,74 @@ if (!function_exists('revita_crm_page_field_label')) {
   <div class="alert alert-warning"><?= Escape::html($metaError) ?></div>
 <?php endif; ?>
 
-<form method="post" action="<?= Escape::html(Url::to('/posts/update-meta')) ?>" enctype="multipart/form-data" class="card border-0 shadow-sm p-3 mb-4" style="border-radius:12px;">
-  <input type="hidden" name="_csrf" value="<?= Escape::html($csrfToken) ?>">
-  <input type="hidden" name="id" value="<?= $postId ?>">
-  <div class="row g-2 align-items-end mb-3">
-    <div class="col-md-4">
-      <label class="form-label" for="title">Título</label>
-      <input class="form-control" id="title" name="title" required value="<?= Escape::html((string) $post['title']) ?>">
-    </div>
-    <div class="col-md-3">
-      <label class="form-label" for="slug">Slug</label>
-      <input class="form-control font-monospace" id="slug" name="slug" required pattern="[a-z0-9-]+" value="<?= Escape::html((string) $post['slug']) ?>">
-    </div>
-    <div class="col-md-3">
-      <label class="form-label" for="published_at">Publicado em</label>
-      <input class="form-control" type="datetime-local" id="published_at" name="published_at" value="<?= Escape::html($pubAt) ?>">
-    </div>
-    <div class="col-md-2">
-      <div class="form-check mt-4">
-        <input class="form-check-input" type="checkbox" id="status_published" name="status_published" value="1" <?= (string) $post['status'] === 'published' ? 'checked' : '' ?>>
-        <label class="form-check-label" for="status_published">Publicada</label>
+<div class="card border-0 shadow-sm mb-4" style="border-radius:12px;">
+  <div class="card-body p-4">
+    <h3 class="h6 mb-3">Dados do post</h3>
+    <form method="post" action="<?= Escape::html(Url::to('/posts/update-meta')) ?>" enctype="multipart/form-data">
+      <input type="hidden" name="_csrf" value="<?= Escape::html($csrfToken) ?>">
+      <input type="hidden" name="id" value="<?= $postId ?>">
+      <div class="row g-2 align-items-end mb-3">
+        <div class="col-md-4">
+          <label class="form-label" for="title">Título</label>
+          <input class="form-control" id="title" name="title" required value="<?= Escape::html((string) $post['title']) ?>">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label" for="slug">Slug</label>
+          <input class="form-control font-monospace" id="slug" name="slug" required pattern="[a-z0-9-]+" value="<?= Escape::html((string) $post['slug']) ?>">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label" for="published_at">Publicado em</label>
+          <input class="form-control" type="datetime-local" id="published_at" name="published_at" value="<?= Escape::html($pubAt) ?>">
+        </div>
+        <div class="col-md-2">
+          <div class="form-check mt-4">
+            <input class="form-check-input" type="checkbox" id="status_published" name="status_published" value="1" <?= (string) $post['status'] === 'published' ? 'checked' : '' ?>>
+            <label class="form-check-label" for="status_published">Publicado</label>
+          </div>
+        </div>
       </div>
-    </div>
-  </div>
-  <div class="row g-2 align-items-end mb-3">
-    <div class="col-md-4">
-      <label class="form-label" for="category_id">Categoria</label>
-      <select class="form-select" id="category_id" name="category_id" required>
-        <?php foreach ($categories as $c): ?>
-          <option value="<?= (int) $c['id'] ?>" <?= (int) $post['category_id'] === (int) $c['id'] ? 'selected' : '' ?>><?= Escape::html((string) $c['name']) ?></option>
-        <?php endforeach; ?>
-      </select>
-    </div>
-    <div class="col-md-5">
-      <label class="form-label" for="subcategory_id">Subcategoria</label>
-      <select class="form-select" id="subcategory_id" name="subcategory_id" required>
-        <?php foreach ($subcategoriesRows as $s): ?>
-          <option value="<?= (int) $s['id'] ?>" data-category-id="<?= (int) $s['category_id'] ?>" <?= (int) $post['subcategory_id'] === (int) $s['id'] ? 'selected' : '' ?>>
-            <?= Escape::html((string) $s['category_name']) ?> — <?= Escape::html((string) $s['name']) ?>
-          </option>
-        <?php endforeach; ?>
-      </select>
-    </div>
-    <div class="col-md-3 small text-muted pt-2">
-      Autor: <strong><?= Escape::html((string) $post['author_login']) ?></strong>
-    </div>
-  </div>
-  <div class="row g-2 align-items-end">
-    <div class="col-md-6">
-      <label class="form-label" for="featured_image">Imagem destacada</label>
-      <?php if (!empty($featuredPreview)): ?>
-        <p class="mb-1"><img src="<?= Escape::html($featuredPreview) ?>" alt="" style="max-height:100px;border-radius:8px;"></p>
-      <?php endif; ?>
-      <input class="form-control" type="file" id="featured_image" name="featured_image" accept="image/*">
-      <div class="form-check mt-2">
-        <input class="form-check-input" type="checkbox" id="clear_featured" name="clear_featured" value="1">
-        <label class="form-check-label" for="clear_featured">Remover imagem destacada</label>
+      <div class="row g-2 align-items-end mb-3">
+        <div class="col-md-4">
+          <label class="form-label" for="category_id">Categoria</label>
+          <select class="form-select" id="category_id" name="category_id" required>
+            <?php foreach ($categories as $c): ?>
+              <option value="<?= (int) $c['id'] ?>" <?= (int) $post['category_id'] === (int) $c['id'] ? 'selected' : '' ?>><?= Escape::html((string) $c['name']) ?></option>
+            <?php endforeach; ?>
+          </select>
+        </div>
+        <div class="col-md-5">
+          <label class="form-label" for="subcategory_id">Subcategoria</label>
+          <select class="form-select" id="subcategory_id" name="subcategory_id" required>
+            <?php foreach ($subcategoriesRows as $s): ?>
+              <option value="<?= (int) $s['id'] ?>" data-category-id="<?= (int) $s['category_id'] ?>" <?= (int) $post['subcategory_id'] === (int) $s['id'] ? 'selected' : '' ?>>
+                <?= Escape::html((string) $s['category_name']) ?> — <?= Escape::html((string) $s['name']) ?>
+              </option>
+            <?php endforeach; ?>
+          </select>
+        </div>
+        <div class="col-md-3 small text-muted pt-2">
+          Autor: <strong><?= Escape::html((string) $post['author_login']) ?></strong>
+        </div>
       </div>
-    </div>
-    <div class="col-md-3 ms-auto">
-      <button type="submit" class="btn btn-outline-secondary w-100">Salvar dados</button>
-    </div>
+      <div class="row g-2 align-items-end">
+        <div class="col-md-6">
+          <label class="form-label" for="featured_image">Imagem destacada</label>
+          <?php if (!empty($featuredPreview)): ?>
+            <p class="mb-1"><img src="<?= Escape::html($featuredPreview) ?>" alt="" style="max-height:100px;border-radius:8px;"></p>
+          <?php endif; ?>
+          <input class="form-control" type="file" id="featured_image" name="featured_image" accept="image/*">
+          <div class="form-check mt-2">
+            <input class="form-check-input" type="checkbox" id="clear_featured" name="clear_featured" value="1">
+            <label class="form-check-label" for="clear_featured">Remover imagem destacada</label>
+          </div>
+        </div>
+        <div class="col-md-3 ms-auto">
+          <button type="submit" class="btn btn-outline-secondary w-100">Salvar</button>
+        </div>
+      </div>
+    </form>
   </div>
-</form>
+</div>
 <script>
 (function () {
   var cat = document.getElementById('category_id');
@@ -147,50 +152,56 @@ if (!function_exists('revita_crm_page_field_label')) {
 })();
 </script>
 
-<form method="post" action="<?= Escape::html(Url::to('/posts/reorder-fields')) ?>" id="form-reorder" class="mb-3">
-  <input type="hidden" name="_csrf" value="<?= Escape::html($csrfToken) ?>">
-  <input type="hidden" name="post_id" value="<?= $postId ?>">
-  <ul class="list-group mb-2" id="sort-fields" style="max-width:640px;">
-    <?php foreach ($blocks as $b): ?>
-      <?php $fid = (int) $b['field']['id']; ?>
-      <li class="list-group-item d-flex justify-content-between align-items-center" data-field-id="<?= $fid ?>">
-        <span><span class="text-muted me-2">↕</span><?= Escape::html((string) $b['field']['label_name']) ?> <small class="text-muted">(<?= Escape::html(revita_crm_page_field_label((string) $b['field']['field_type'])) ?>)</small></span>
-      </li>
-    <?php endforeach; ?>
-  </ul>
-  <div id="reorder-hidden"></div>
-  <button type="button" class="btn btn-sm btn-outline-primary" id="btn-save-order">Aplicar ordem dos campos</button>
-</form>
+<div class="card border-0 shadow-sm mb-4" style="border-radius:12px;">
+  <div class="card-body p-4">
+    <h3 class="h6 mb-3">Campos</h3>
+    <form method="post" action="<?= Escape::html(Url::to('/posts/add-field')) ?>" class="mb-4">
+      <input type="hidden" name="_csrf" value="<?= Escape::html($csrfToken) ?>">
+      <input type="hidden" name="post_id" value="<?= $postId ?>">
+      <h4 class="small text-secondary mb-2">Adicionar campo</h4>
+      <?php if (!empty($fieldError)): ?>
+        <div class="alert alert-danger py-2"><?= Escape::html($fieldError) ?></div>
+      <?php endif; ?>
+      <div class="row g-2 align-items-end">
+        <div class="col-md-4">
+          <label class="form-label" for="label_name">Nome (label)</label>
+          <input class="form-control" id="label_name" name="label_name" required placeholder="Ex.: Texto principal">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label" for="field_key">Identificador <span class="text-muted small">(opcional)</span></label>
+          <input class="form-control" id="field_key" name="field_key" pattern="[a-z0-9-]*" placeholder="auto">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label" for="field_type">Tipo</label>
+          <select class="form-select" id="field_type" name="field_type">
+            <?php foreach (['texto', 'foto', 'galeria_fotos', 'video', 'galeria_videos', 'repetidor'] as $ft): ?>
+              <option value="<?= Escape::html($ft) ?>"><?= Escape::html(revita_crm_page_field_label($ft)) ?></option>
+            <?php endforeach; ?>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <button type="submit" class="btn btn-revita w-100">Adicionar</button>
+        </div>
+      </div>
+    </form>
 
-<form method="post" action="<?= Escape::html(Url::to('/posts/add-field')) ?>" class="card border-0 shadow-sm p-3 mb-4" style="border-radius:12px;">
-  <input type="hidden" name="_csrf" value="<?= Escape::html($csrfToken) ?>">
-  <input type="hidden" name="post_id" value="<?= $postId ?>">
-  <h3 class="h6">Adicionar campo</h3>
-  <?php if (!empty($fieldError)): ?>
-    <div class="alert alert-danger py-2"><?= Escape::html($fieldError) ?></div>
-  <?php endif; ?>
-  <div class="row g-2 align-items-end">
-    <div class="col-md-4">
-      <label class="form-label" for="label_name">Nome (label)</label>
-      <input class="form-control" id="label_name" name="label_name" required placeholder="Ex.: Texto principal">
-    </div>
-    <div class="col-md-3">
-      <label class="form-label" for="field_key">Identificador <span class="text-muted small">(opcional)</span></label>
-      <input class="form-control" id="field_key" name="field_key" pattern="[a-z0-9-]*" placeholder="auto">
-    </div>
-    <div class="col-md-3">
-      <label class="form-label" for="field_type">Tipo</label>
-      <select class="form-select" id="field_type" name="field_type">
-        <?php foreach (['texto', 'foto', 'galeria_fotos', 'video', 'galeria_videos', 'repetidor'] as $ft): ?>
-          <option value="<?= Escape::html($ft) ?>"><?= Escape::html(revita_crm_page_field_label($ft)) ?></option>
+    <form method="post" action="<?= Escape::html(Url::to('/posts/reorder-fields')) ?>" id="form-reorder">
+      <input type="hidden" name="_csrf" value="<?= Escape::html($csrfToken) ?>">
+      <input type="hidden" name="post_id" value="<?= $postId ?>">
+      <h4 class="small text-secondary mb-2">Ordem dos campos</h4>
+      <ul class="list-group mb-2" id="sort-fields" style="max-width:640px;">
+        <?php foreach ($blocks as $b): ?>
+          <?php $fid = (int) $b['field']['id']; ?>
+          <li class="list-group-item d-flex justify-content-between align-items-center" data-field-id="<?= $fid ?>">
+            <span><span class="text-muted me-2">↕</span><?= Escape::html((string) $b['field']['label_name']) ?> <small class="text-muted">(<?= Escape::html(revita_crm_page_field_label((string) $b['field']['field_type'])) ?>)</small></span>
+          </li>
         <?php endforeach; ?>
-      </select>
-    </div>
-    <div class="col-md-2">
-      <button type="submit" class="btn btn-revita w-100">Adicionar</button>
-    </div>
+      </ul>
+      <div id="reorder-hidden"></div>
+      <button type="button" class="btn btn-sm btn-outline-primary" id="btn-save-order">Aplicar ordem</button>
+    </form>
   </div>
-</form>
+</div>
 
 <?php if (!empty($contentError)): ?>
   <div class="alert alert-danger"><?= Escape::html($contentError) ?></div>
@@ -201,30 +212,33 @@ if (!function_exists('revita_crm_page_field_label')) {
   <input type="hidden" name="post_id" value="<?= $postId ?>">
 </form>
 
-<?php foreach ($blocks as $b): ?>
-  <?php
-    $f = $b['field'];
-    $fid = (int) $f['id'];
-    $ftype = (string) $f['field_type'];
-  ?>
-  <div class="card border-0 shadow-sm mb-4 field-block" style="border-radius:12px;" data-field-id="<?= $fid ?>">
-    <div class="card-header d-flex justify-content-between align-items-center bg-white py-3">
-      <div>
-        <strong><?= Escape::html((string) $f['label_name']) ?></strong>
-        <span class="badge bg-secondary ms-1"><?= Escape::html(revita_crm_page_field_label($ftype)) ?></span>
-        <code class="small ms-1"><?= Escape::html((string) $f['field_key']) ?></code>
-      </div>
-      <?php if ($isAdmin): ?>
-        <form method="post" action="<?= Escape::html(Url::to('/posts/delete-field')) ?>" class="m-0" onsubmit="return confirm('Remover este campo e seus dados?');">
-          <input type="hidden" name="_csrf" value="<?= Escape::html($csrfToken) ?>">
-          <input type="hidden" name="post_id" value="<?= $postId ?>">
-          <input type="hidden" name="field_id" value="<?= $fid ?>">
-          <button type="submit" class="btn btn-sm btn-outline-danger">Excluir campo</button>
-        </form>
-      <?php endif; ?>
-    </div>
-    <div class="card-body">
-      <?php if ($b['kind'] === 'scalar'): ?>
+<div class="card border-0 shadow-sm mb-4" style="border-radius:12px;">
+  <div class="card-body p-4">
+    <h3 class="h6 mb-3">Conteúdo</h3>
+    <?php foreach ($blocks as $b): ?>
+      <?php
+        $f = $b['field'];
+        $fid = (int) $f['id'];
+        $ftype = (string) $f['field_type'];
+      ?>
+      <div class="card border-0 shadow-sm mb-4 field-block" style="border-radius:12px;" data-field-id="<?= $fid ?>">
+        <div class="card-header d-flex justify-content-between align-items-center bg-white py-3">
+          <div>
+            <strong><?= Escape::html((string) $f['label_name']) ?></strong>
+            <span class="badge bg-secondary ms-1"><?= Escape::html(revita_crm_page_field_label($ftype)) ?></span>
+            <code class="small ms-1"><?= Escape::html((string) $f['field_key']) ?></code>
+          </div>
+          <?php if ($isAdmin): ?>
+            <form method="post" action="<?= Escape::html(Url::to('/posts/delete-field')) ?>" class="m-0" onsubmit="return confirm('Remover este campo e seus dados?');">
+              <input type="hidden" name="_csrf" value="<?= Escape::html($csrfToken) ?>">
+              <input type="hidden" name="post_id" value="<?= $postId ?>">
+              <input type="hidden" name="field_id" value="<?= $fid ?>">
+              <button type="submit" class="btn btn-sm btn-outline-danger">Excluir campo</button>
+            </form>
+          <?php endif; ?>
+        </div>
+        <div class="card-body">
+          <?php if ($b['kind'] === 'scalar'): ?>
         <?php
           $v = $b['value'];
           $mid = null;
@@ -316,7 +330,7 @@ if (!function_exists('revita_crm_page_field_label')) {
           <?php endfor; ?>
         <?php endif; ?>
 
-      <?php elseif ($b['kind'] === 'repetidor'): ?>
+          <?php elseif ($b['kind'] === 'repetidor'): ?>
         <?php if (empty($b['rep_id'])): ?>
           <p class="text-warning small">Repetidor inconsistente. Remova e crie novamente.</p>
         <?php else: ?>
@@ -488,10 +502,12 @@ if (!function_exists('revita_crm_page_field_label')) {
           <?php endif; ?>
 
         <?php endif; ?>
-      <?php endif; ?>
-    </div>
+          <?php endif; ?>
+        </div>
+      </div>
+    <?php endforeach; ?>
   </div>
-<?php endforeach; ?>
+</div>
 
 <div class="sticky-bottom bg-white py-3 border-top mt-4" style="z-index:100;">
   <button type="submit" form="<?= Escape::html($formContent) ?>" class="btn btn-revita btn-lg">Salvar conteúdo dos campos</button>

@@ -1,4 +1,4 @@
--- Revita CRM — DDL (MySQL). Executado pelo instalador PHP.
+-- Revita CMS — DDL (MySQL). Executado pelo instalador PHP.
 -- Gerado a partir do arquivo raiz do projeto; manter em sync com admin_database_init.sql quando alterar.
 
 SET NAMES utf8mb4;

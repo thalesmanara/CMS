@@ -1,6 +1,6 @@
 -- SQL inicial / DDL (MySQL)
 -- Este arquivo deve ser aplicado contra o banco de dados criado manualmente
--- antes da instalação do CRM.
+-- antes da instalação do CMS.
 --
 -- Recomendações:
 -- - Banco/usuário já criados pela equipe.

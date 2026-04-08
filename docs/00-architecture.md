@@ -1,4 +1,4 @@
-## Arquitetura do CRM Revita (PHP + MySQL, sem framework pesado)
+## Arquitetura do CMS Revita (PHP + MySQL, sem framework pesado)
 
 ### Objetivos
 - Hospedagem compartilhada (PHP, Apache, `.htaccess`, `public_html`, MySQL).

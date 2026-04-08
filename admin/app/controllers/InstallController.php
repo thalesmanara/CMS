@@ -26,7 +26,7 @@ final class InstallController
     {
         $error = Session::flash('install_error');
         $html = View::layout('guest', 'install/index', [
-            'title' => 'Instalação — Revita CRM',
+            'title' => 'Instalação — Revita CMS',
             'csrfToken' => Csrf::token(),
             'error' => $error,
         ]);

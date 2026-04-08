@@ -38,7 +38,7 @@ final class AuthController
         $notice = Session::flash('auth_notice');
         $success = Session::flash('auth_success');
         $html = View::layout('guest', 'auth/login', [
-            'title' => 'Entrar — Revita CRM',
+            'title' => 'Entrar — Revita CMS',
             'csrfToken' => Csrf::token(),
             'error' => $error,
             'notice' => $notice,
@@ -105,7 +105,7 @@ final class AuthController
         $info = Session::flash('forgot_info');
         $error = Session::flash('forgot_error');
         $html = View::layout('guest', 'auth/forgot-password', [
-            'title' => 'Recuperar senha — Revita CRM',
+            'title' => 'Recuperar senha — Revita CMS',
             'csrfToken' => Csrf::token(),
             'info' => $info,
             'error' => $error,
@@ -132,10 +132,10 @@ final class AuthController
             $reset = new PasswordReset();
             $plain = $reset->createForUser((int) $row['id']);
             $link = Url::adminAbsolute('reset-password?token=' . rawurlencode($plain));
-            $body = "Olá,\r\n\r\nPara redefinir sua senha no Revita CRM, acesse o link abaixo (válido por poucas horas):\r\n\r\n"
+            $body = "Olá,\r\n\r\nPara redefinir sua senha no Revita CMS, acesse o link abaixo (válido por poucas horas):\r\n\r\n"
                 . $link
                 . "\r\n\r\nSe você não solicitou, ignore este e-mail.\r\n";
-            Mail::sendPlain((string) $row['email'], 'Redefinição de senha — Revita CRM', $body);
+            Mail::sendPlain((string) $row['email'], 'Redefinição de senha — Revita CMS', $body);
         }
 
         Session::flash('auth_notice', 'Se o e-mail existir em nossa base, enviamos instruções para redefinição de senha.');
@@ -159,7 +159,7 @@ final class AuthController
         }
         $error = Session::flash('reset_error');
         $html = View::layout('guest', 'auth/reset-password', [
-            'title' => 'Nova senha — Revita CRM',
+            'title' => 'Nova senha — Revita CMS',
             'csrfToken' => Csrf::token(),
             'token' => $token,
             'error' => $error,

@@ -24,7 +24,7 @@ final class CategoryController
         $sub = new Subcategory();
 
         $html = View::layout('admin', 'categories/index', [
-            'title' => 'Categorias — Revita CRM',
+            'title' => 'Categorias — Revita CMS',
             'nav' => 'categories',
             'user' => Auth::user(),
             'categories' => $cat->all(),
@@ -42,7 +42,7 @@ final class CategoryController
     {
         Auth::requireEditor();
         $html = View::layout('admin', 'categories/category-form', [
-            'title' => 'Nova categoria — Revita CRM',
+            'title' => 'Nova categoria — Revita CMS',
             'nav' => 'categories',
             'user' => Auth::user(),
             'editCategory' => null,
@@ -96,7 +96,7 @@ final class CategoryController
             Url::redirect('/categories');
         }
         $html = View::layout('admin', 'categories/category-form', [
-            'title' => 'Editar categoria — Revita CRM',
+            'title' => 'Editar categoria — Revita CMS',
             'nav' => 'categories',
             'user' => Auth::user(),
             'editCategory' => $row,
@@ -168,7 +168,7 @@ final class CategoryController
         Auth::requireEditor();
         $cat = new Category();
         $html = View::layout('admin', 'categories/subcategory-form', [
-            'title' => 'Nova subcategoria — Revita CRM',
+            'title' => 'Nova subcategoria — Revita CMS',
             'nav' => 'categories',
             'user' => Auth::user(),
             'editSubcategory' => null,
@@ -227,7 +227,7 @@ final class CategoryController
         }
         $cat = new Category();
         $html = View::layout('admin', 'categories/subcategory-form', [
-            'title' => 'Editar subcategoria — Revita CRM',
+            'title' => 'Editar subcategoria — Revita CMS',
             'nav' => 'categories',
             'user' => Auth::user(),
             'editSubcategory' => $row,

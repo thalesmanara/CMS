@@ -36,7 +36,7 @@ final class PageController
         Auth::requireEditor();
         $page = new Page();
         $html = View::layout('admin', 'pages/index', [
-            'title' => 'Páginas — Revita CRM',
+            'title' => 'Páginas — Revita CMS',
             'nav' => 'pages',
             'user' => Auth::user(),
             'pages' => $page->all(),
@@ -52,7 +52,7 @@ final class PageController
     {
         Auth::requireAdmin();
         $html = View::layout('admin', 'pages/create', [
-            'title' => 'Nova página — Revita CRM',
+            'title' => 'Nova página — Revita CMS',
             'nav' => 'pages',
             'user' => Auth::user(),
             'error' => Session::flash('page_form_error'),
@@ -102,7 +102,7 @@ final class PageController
         }
         $blocks = $this->buildEditBlocks($id);
         $html = View::layout('admin', 'pages/edit', [
-            'title' => 'Editar página — Revita CRM',
+            'title' => 'Editar página — Revita CMS',
             'nav' => 'pages',
             'user' => Auth::user(),
             'page' => $row,

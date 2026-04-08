@@ -40,7 +40,7 @@ final class PostController
         Auth::requireEditor();
         $post = new Post();
         $html = View::layout('admin', 'posts/index', [
-            'title' => 'Postagens — Revita CRM',
+            'title' => 'Postagens — Revita CMS',
             'nav' => 'posts',
             'user' => Auth::user(),
             'posts' => $post->all(),
@@ -58,7 +58,7 @@ final class PostController
         $subs = (new Subcategory())->allWithCategory();
         $cats = (new Category())->all();
         $html = View::layout('admin', 'posts/create', [
-            'title' => 'Nova postagem — Revita CRM',
+            'title' => 'Nova postagem — Revita CMS',
             'nav' => 'posts',
             'user' => Auth::user(),
             'error' => Session::flash('post_form_error'),
@@ -146,7 +146,7 @@ final class PostController
                 : null
         );
         $html = View::layout('admin', 'posts/edit', [
-            'title' => 'Editar post — Revita CRM',
+            'title' => 'Editar post — Revita CMS',
             'nav' => 'posts',
             'user' => Auth::user(),
             'post' => $row,

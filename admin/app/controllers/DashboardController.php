@@ -19,7 +19,7 @@ final class DashboardController
         $flashOk = Session::flash('ok');
         $flashErr = Session::flash('error');
         $html = View::layout('admin', 'dashboard/index', [
-            'title' => 'Painel — Revita CRM',
+            'title' => 'Painel — Revita CMS',
             'nav' => 'dashboard',
             'user' => $user,
             'flashOk' => $flashOk,

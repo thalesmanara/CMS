@@ -23,7 +23,7 @@ final class UserController
         $flashOk = Session::flash('ok');
         $flashErr = Session::flash('error');
         $html = View::layout('admin', 'users/index', [
-            'title' => 'Usuários — Revita CRM',
+            'title' => 'Usuários — Revita CMS',
             'nav' => 'users',
             'user' => Auth::user(),
             'users' => $users,
@@ -38,7 +38,7 @@ final class UserController
     {
         Auth::requireAdmin();
         $html = View::layout('admin', 'users/form', [
-            'title' => 'Novo usuário — Revita CRM',
+            'title' => 'Novo usuário — Revita CMS',
             'nav' => 'users',
             'user' => Auth::user(),
             'editUser' => null,
@@ -95,7 +95,7 @@ final class UserController
             Url::redirect('/users');
         }
         $html = View::layout('admin', 'users/form', [
-            'title' => 'Editar usuário — Revita CRM',
+            'title' => 'Editar usuário — Revita CMS',
             'nav' => 'users',
             'user' => Auth::user(),
             'editUser' => $row,

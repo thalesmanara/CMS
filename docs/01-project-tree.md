@@ -41,7 +41,7 @@ Estrutura sugerida no workspace (o instalador será criado em `admin/`):
 ```
 
 ### Regras importantes para compatibilidade
-- O CRM é acessado em `https://exemplo.com.br/admin`.
+- O CMS é acessado em `https://exemplo.com.br/admin`.
 - Os endpoints JSON ficam em `https://exemplo.com.br/admin/api/...`.
 - Mídias enviadas ficam em `https://exemplo.com.br/admin/uploads/...`.
 - Nenhuma dependência pesada (framework) é exigida.

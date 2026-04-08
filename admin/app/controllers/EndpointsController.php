@@ -18,6 +18,14 @@ final class EndpointsController
         Auth::requireAdmin();
 
         $endpoints = [
+            'API JSON (public/ leitura)' => [
+                ['GET', '/api/pages', 'Listar páginas publicadas (?slug para buscar)'],
+                ['GET', '/api/pages/{slug}', 'Detalhe por slug'],
+                ['GET', '/api/posts', 'Listar posts publicados (?categoria={slug}&subcategoria={slug} opcional; ?slug para detalhe)'],
+                ['GET', '/api/posts/{slug}', 'Detalhe por slug'],
+                ['GET', '/api/categories', 'Listar categorias com subcategorias'],
+                ['GET', '/api/subcategories', 'Listar subcategorias (plano)'],
+            ],
             'Painel (Web)' => [
                 ['GET', '/', 'Raiz (redireciona para /login ou /dashboard)'],
                 ['GET', '/login', 'Tela de login'],
@@ -80,14 +88,6 @@ final class EndpointsController
                 ['GET', '/install', 'Tela de instalação (antes de finalizar)'],
                 ['POST', '/install', 'Criar schema + seed do usuário mestre'],
             ],
-            'API JSON (public/ leitura)' => [
-                ['GET', '/api/pages', 'Listar páginas publicadas (?slug para buscar)'],
-                ['GET', '/api/pages/{slug}', 'Detalhe por slug'],
-                ['GET', '/api/posts', 'Listar posts publicados (?categoria={slug}&subcategoria={slug} opcional; ?slug para detalhe)'],
-                ['GET', '/api/posts/{slug}', 'Detalhe por slug'],
-                ['GET', '/api/categories', 'Listar categorias com subcategorias'],
-                ['GET', '/api/subcategories', 'Listar subcategorias (plano)'],
-            ],
         ];
 
         // Normaliza URLs para exibir caminho completo dentro do admin.
@@ -105,7 +105,7 @@ final class EndpointsController
         }
 
         $html = View::layout('admin', 'endpoints/index', [
-            'title' => 'Endpoints — Revita CRM',
+            'title' => 'Endpoints — Revita CMS',
             'nav' => 'endpoints',
             'user' => Auth::user(),
             'csrfToken' => '', // apenas para compatibilidade visual se a view usar

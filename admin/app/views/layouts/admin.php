@@ -101,6 +101,17 @@ $isAdmin = Auth::isAdmin();
             <span class="small text-muted"><?= Escape::html($user['login']) ?></span>
             <span class="badge badge-level"><?= (int) $user['level'] === 1 ? 'Admin' : 'Editor' ?></span>
           <?php endif; ?>
+          <?php if ($isAdmin): ?>
+            <div class="dropdown">
+              <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                Backup
+              </button>
+              <ul class="dropdown-menu dropdown-menu-end">
+                <li><a class="dropdown-item" href="<?= Escape::html(Url::to('/backup/export')) ?>">Exportar (baixar)</a></li>
+                <li><a class="dropdown-item" href="<?= Escape::html(Url::to('/backup')) ?>">Importar / Gerenciar</a></li>
+              </ul>
+            </div>
+          <?php endif; ?>
           <a class="btn btn-outline-secondary btn-sm" href="<?= Escape::html(Url::to('/logout')) ?>">Sair</a>
         </div>
       </header>

@@ -83,6 +83,9 @@ final class EndpointsController
                 ['POST', '/posts/rep-add-item', 'Repetidor: adicionar item'],
                 ['POST', '/posts/rep-del-item', 'Repetidor: excluir item'],
                 ['POST', '/posts/rep-reorder-items', 'Repetidor: reordenar itens'],
+                ['GET', '/backup', 'Backup/migração (admin-only)'],
+                ['GET', '/backup/export', 'Exportar backup (admin-only)'],
+                ['POST', '/backup/import', 'Importar backup (admin-only)'],
             ],
             'Instalador' => [
                 ['GET', '/install', 'Tela de instalação (antes de finalizar)'],

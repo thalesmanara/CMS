@@ -8,6 +8,7 @@ use Revita\Crm\Controllers\DashboardController;
 use Revita\Crm\Controllers\PageController;
 use Revita\Crm\Controllers\PostController;
 use Revita\Crm\Controllers\EndpointsController;
+use Revita\Crm\Controllers\BackupController;
 use Revita\Crm\Controllers\UserController;
 
 return [
@@ -33,6 +34,8 @@ return [
         '/posts/create' => [PostController::class, 'createForm'],
         '/posts/edit' => [PostController::class, 'editForm'],
         '/endpoints' => [EndpointsController::class, 'index'],
+        '/backup' => [BackupController::class, 'index'],
+        '/backup/export' => [BackupController::class, 'export'],
     ],
     'POST' => [
         '/login' => [AuthController::class, 'login'],
@@ -71,5 +74,6 @@ return [
         '/posts/rep-add-item' => [PostController::class, 'repeaterAddItem'],
         '/posts/rep-del-item' => [PostController::class, 'repeaterDeleteItem'],
         '/posts/rep-reorder-items' => [PostController::class, 'repeaterReorderItems'],
+        '/backup/import' => [BackupController::class, 'import'],
     ],
 ];

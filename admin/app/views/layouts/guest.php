@@ -15,6 +15,7 @@ $assetLogo = Url::to('/assets/img/logoRevita.png');
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title><?= Escape::html($title) ?></title>
+  <link rel="icon" type="image/png" href="<?= Escape::html($assetLogo) ?>">
   <link rel="stylesheet" href="<?= Escape::html(Url::to('/assets/css/guest-shell.css')) ?>">
   <style>
     :root {

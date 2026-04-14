@@ -338,7 +338,7 @@ final class PageController
         $type = (string) $request->post('sub_type', 'texto');
         $key = trim((string) $request->post('sub_key', ''));
         $key = $key === '' ? Slugger::slugify($label) : Slugger::slugify($key);
-        if (!in_array($type, ['texto', 'foto', 'galeria_fotos', 'video', 'galeria_videos'], true)) {
+        if (!in_array($type, ['texto', 'botao', 'icone', 'foto', 'galeria_fotos', 'video', 'galeria_videos'], true)) {
             $type = 'texto';
         }
         $fd = (new FieldDefinition())->findById($fieldDefId);

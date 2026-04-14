@@ -4,7 +4,7 @@ CMS leve em **PHP + MySQL** para a **Revita Comunicação**, pensado para hosped
 
 ## Stack
 
-- PHP 8+ (PDO, `password_hash` / `password_verify`)
+- PHP **8.1+** (recomendado; PHP 7.4 pode causar erro **500**), PDO, `password_hash` / `password_verify`
 - MySQL 5.7+ / 8+
 - HTML/CSS/JS (Bootstrap 5 no painel)
 - API REST JSON (em construção)

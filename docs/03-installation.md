@@ -1,7 +1,7 @@
 ## Instalação — Revita CMS (`/admin`)
 
 ### Requisitos
-- PHP 8.0 ou superior (recomendado 8.1+), extensão **pdo_mysql**
+- PHP **8.1 ou superior** (PHP 7.4 pode causar erro **500**), extensão **pdo_mysql**
 - MySQL 5.7+ ou 8.x
 - Apache com **mod_rewrite** (para o arquivo `admin/.htaccess`)
 - Banco de dados **criado manualmente** na hospedagem (nome, usuário e senha)

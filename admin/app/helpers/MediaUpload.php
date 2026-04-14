@@ -13,7 +13,7 @@ final class MediaUpload
     private const MAX_VIDEO_BYTES = 80_000_000;
 
     /** @var list<string> */
-    private static array $imageExt = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+    private static array $imageExt = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'];
 
     /** @var list<string> */
     private static array $videoExt = ['mp4', 'webm', 'ogg'];

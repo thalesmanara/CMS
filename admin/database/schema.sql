@@ -129,6 +129,7 @@ CREATE TABLE IF NOT EXISTS revita_crm_field_definitions (
   field_type ENUM(
     'texto',
     'botao',
+    'icone',
     'foto',
     'galeria_fotos',
     'video',
@@ -161,6 +162,8 @@ CREATE TABLE IF NOT EXISTS revita_crm_repeater_subfield_definitions (
   label_name VARCHAR(190) NOT NULL,
   field_type ENUM(
     'texto',
+    'botao',
+    'icone',
     'foto',
     'galeria_fotos',
     'video',

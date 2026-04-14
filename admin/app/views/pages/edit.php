@@ -35,6 +35,7 @@ if (!function_exists('revita_crm_page_field_label')) {
         return match ($t) {
             'texto' => 'Texto',
             'botao' => 'Botão',
+            'icone' => 'Ícone',
             'foto' => 'Foto',
             'galeria_fotos' => 'Galeria de fotos',
             'video' => 'Vídeo',
@@ -138,7 +139,7 @@ if (!function_exists('revita_crm_page_field_label')) {
         <div class="col-md-2">
           <label class="form-label" for="field_type">Tipo</label>
           <select class="form-select" id="field_type" name="field_type">
-            <?php foreach (['texto', 'botao', 'foto', 'galeria_fotos', 'video', 'galeria_videos', 'repetidor'] as $ft): ?>
+            <?php foreach (['texto', 'botao', 'icone', 'foto', 'galeria_fotos', 'video', 'galeria_videos', 'repetidor'] as $ft): ?>
               <option value="<?= Escape::html($ft) ?>"><?= Escape::html(revita_crm_page_field_label($ft)) ?></option>
             <?php endforeach; ?>
           </select>
@@ -289,6 +290,55 @@ if (!function_exists('revita_crm_page_field_label')) {
               <input class="form-control font-monospace" type="url" name="btn_url_<?= $fid ?>" form="<?= Escape::html($formContent) ?>" value="<?= $v ? Escape::html((string) ($v['value_url'] ?? '')) : '' ?>" placeholder="https://...">
             </div>
           </div>
+        <?php elseif ($ftype === 'icone'): ?>
+          <?php
+            $icon = [];
+            if ($v && !empty($v['value_mixed_json'])) {
+              $dj = json_decode((string) $v['value_mixed_json'], true);
+              if (is_array($dj)) {
+                $icon = $dj;
+              }
+            }
+            $iconSrc = (string) ($icon['source'] ?? 'registry');
+            $iconKey = (string) ($icon['iconKey'] ?? '');
+            $iconSet = (string) ($icon['iconSet'] ?? '');
+            $iconStyle = (string) ($icon['iconStyle'] ?? '');
+            $iconUrl = null;
+            if ($iconSrc === 'upload' && !empty($icon['media_id'])) {
+              $mrow = (new \Revita\Crm\Models\Media())->findById((int) $icon['media_id']);
+              if ($mrow) {
+                $iconUrl = PageApiSerializer::mediaPublicUrl((string) $mrow['relative_path']);
+              }
+            }
+          ?>
+          <div class="row g-2">
+            <div class="col-md-3">
+              <label class="form-label small mb-1">Origem</label>
+              <select class="form-select" name="icon_src_<?= $fid ?>" form="<?= Escape::html($formContent) ?>">
+                <option value="registry" <?= $iconSrc === 'registry' ? 'selected' : '' ?>>iconKey (frontend)</option>
+                <option value="upload" <?= $iconSrc === 'upload' ? 'selected' : '' ?>>Upload SVG</option>
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label small mb-1">iconSet <span class="text-muted">(opcional)</span></label>
+              <input class="form-control font-monospace" name="icon_set_<?= $fid ?>" form="<?= Escape::html($formContent) ?>" value="<?= Escape::html($iconSet) ?>" placeholder="lucide / brand">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label small mb-1">iconStyle <span class="text-muted">(opcional)</span></label>
+              <input class="form-control font-monospace" name="icon_style_<?= $fid ?>" form="<?= Escape::html($formContent) ?>" value="<?= Escape::html($iconStyle) ?>" placeholder="outline / solid">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label small mb-1">iconKey</label>
+              <input class="form-control font-monospace" name="icon_key_<?= $fid ?>" form="<?= Escape::html($formContent) ?>" value="<?= Escape::html($iconKey) ?>" placeholder="whatsapp / user / check-circle">
+            </div>
+            <div class="col-md-8">
+              <label class="form-label small mb-1">SVG <span class="text-muted">(opcional)</span></label>
+              <input type="file" class="form-control" name="icon_svg_<?= $fid ?>" form="<?= Escape::html($formContent) ?>" accept=".svg,image/svg+xml">
+              <?php if (!empty($iconUrl)): ?>
+                <div class="small mt-1">Atual: <a href="<?= Escape::html($iconUrl) ?>" target="_blank" rel="noreferrer">ver SVG</a></div>
+              <?php endif; ?>
+            </div>
+          </div>
         <?php elseif ($ftype === 'foto'): ?>
           <?php if ($mid): ?>
             <?php $mrow = (new \Revita\Crm\Models\Media())->findById($mid); ?>
@@ -391,7 +441,7 @@ if (!function_exists('revita_crm_page_field_label')) {
               </div>
               <div class="col-md-3">
                 <select class="form-select form-select-sm" name="sub_type">
-                  <?php foreach (['texto', 'foto', 'galeria_fotos', 'video', 'galeria_videos'] as $ft): ?>
+                  <?php foreach (['texto', 'botao', 'icone', 'foto', 'galeria_fotos', 'video', 'galeria_videos'] as $ft): ?>
                     <option value="<?= $ft ?>"><?= Escape::html(revita_crm_page_field_label($ft)) ?></option>
                   <?php endforeach; ?>
                 </select>
@@ -436,6 +486,61 @@ if (!function_exists('revita_crm_page_field_label')) {
                   <?php if ($st === 'texto'): ?>
                     <input class="form-control form-control-sm" name="rp_<?= $iid ?>_<?= $sid ?>" form="<?= Escape::html($formContent) ?>"
                            value="<?= $vr ? Escape::html((string) ($vr['value_text'] ?? '')) : '' ?>">
+                  <?php elseif ($st === 'botao'): ?>
+                    <div class="row g-1">
+                      <div class="col">
+                        <input class="form-control form-control-sm" name="rp_btn_text_<?= $iid ?>_<?= $sid ?>" form="<?= Escape::html($formContent) ?>"
+                               value="<?= $vr ? Escape::html((string) ($vr['value_text'] ?? '')) : '' ?>" placeholder="Texto do botão">
+                      </div>
+                      <div class="col">
+                        <input class="form-control form-control-sm font-monospace" type="url" name="rp_btn_url_<?= $iid ?>_<?= $sid ?>" form="<?= Escape::html($formContent) ?>"
+                               value="<?= $vr ? Escape::html((string) ($vr['value_url'] ?? '')) : '' ?>" placeholder="https://...">
+                      </div>
+                    </div>
+                  <?php elseif ($st === 'icone'): ?>
+                    <?php
+                      $ic = [];
+                      if ($vr && !empty($vr['value_mixed_json'])) {
+                        $dj = json_decode((string) $vr['value_mixed_json'], true);
+                        if (is_array($dj)) {
+                          $ic = $dj;
+                        }
+                      }
+                      $ics = (string) ($ic['source'] ?? 'registry');
+                      $ick = (string) ($ic['iconKey'] ?? '');
+                      $icset = (string) ($ic['iconSet'] ?? '');
+                      $icsty = (string) ($ic['iconStyle'] ?? '');
+                      $icUrl = null;
+                      if ($ics === 'upload' && !empty($ic['media_id'])) {
+                        $mrow = (new \Revita\Crm\Models\Media())->findById((int) $ic['media_id']);
+                        if ($mrow) {
+                          $icUrl = PageApiSerializer::mediaPublicUrl((string) $mrow['relative_path']);
+                        }
+                      }
+                    ?>
+                    <div class="row g-1">
+                      <div class="col-auto">
+                        <select class="form-select form-select-sm" name="rp_icon_src_<?= $iid ?>_<?= $sid ?>" form="<?= Escape::html($formContent) ?>">
+                          <option value="registry" <?= $ics === 'registry' ? 'selected' : '' ?>>iconKey</option>
+                          <option value="upload" <?= $ics === 'upload' ? 'selected' : '' ?>>SVG</option>
+                        </select>
+                      </div>
+                      <div class="col">
+                        <input class="form-control form-control-sm font-monospace" name="rp_icon_set_<?= $iid ?>_<?= $sid ?>" form="<?= Escape::html($formContent) ?>" value="<?= Escape::html($icset) ?>" placeholder="iconSet (opcional)">
+                      </div>
+                      <div class="col">
+                        <input class="form-control form-control-sm font-monospace" name="rp_icon_style_<?= $iid ?>_<?= $sid ?>" form="<?= Escape::html($formContent) ?>" value="<?= Escape::html($icsty) ?>" placeholder="iconStyle (opcional)">
+                      </div>
+                      <div class="col">
+                        <input class="form-control form-control-sm font-monospace" name="rp_icon_key_<?= $iid ?>_<?= $sid ?>" form="<?= Escape::html($formContent) ?>" value="<?= Escape::html($ick) ?>" placeholder="iconKey">
+                      </div>
+                      <div class="col-12 mt-1">
+                        <input type="file" class="form-control form-control-sm" name="rp_icon_svg_<?= $iid ?>_<?= $sid ?>" form="<?= Escape::html($formContent) ?>" accept=".svg,image/svg+xml">
+                        <?php if (!empty($icUrl)): ?>
+                          <div class="small mt-1">Atual: <a href="<?= Escape::html($icUrl) ?>" target="_blank" rel="noreferrer">ver SVG</a></div>
+                        <?php endif; ?>
+                      </div>
+                    </div>
                   <?php elseif ($st === 'foto'): ?>
                     <?php
                       $pm = [];

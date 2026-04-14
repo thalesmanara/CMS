@@ -24,7 +24,7 @@ final class PageController
     use ManagesDynamicFields;
 
     private const FIELD_TYPES = [
-        'texto', 'botao', 'foto', 'galeria_fotos', 'video', 'galeria_videos', 'repetidor',
+        'texto', 'botao', 'icone', 'foto', 'galeria_fotos', 'video', 'galeria_videos', 'repetidor',
     ];
 
     protected function fieldOwnerType(): string

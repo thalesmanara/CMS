@@ -9,6 +9,7 @@ use Revita\Crm\Helpers\MediaUpload;
 use Revita\Crm\Helpers\Youtube;
 use Revita\Crm\Models\FieldDefinition;
 use Revita\Crm\Models\FieldValue;
+use Revita\Crm\Models\Media;
 use Revita\Crm\Models\Repeater;
 
 /**
@@ -94,6 +95,48 @@ trait ManagesDynamicFields
                 $text = trim((string) $request->post('btn_text_' . $id, ''));
                 $url = trim((string) $request->post('btn_url_' . $id, ''));
                 $fv->upsert($id, $text, $url, null, null);
+                return;
+            case 'icone':
+                $src = (string) $request->post('icon_src_' . $id, 'registry');
+                if ($src === 'upload') {
+                    $fileKey = 'icon_svg_' . $id;
+                    if (isset($_FILES[$fileKey]) && (int) ($_FILES[$fileKey]['error'] ?? 0) === UPLOAD_ERR_OK) {
+                        $mid = MediaUpload::handle($_FILES[$fileKey], 'image', $userId);
+                        if ($mid !== null) {
+                            $m = (new Media())->findById($mid);
+                            if ($m !== null && strtolower((string) ($m['stored_name'] ?? '')) !== '' && !str_ends_with(strtolower((string) ($m['stored_name'] ?? '')), '.svg')) {
+                                // Not an SVG; ignore.
+                                $mid = null;
+                            }
+                        }
+                        if ($mid !== null) {
+                            $mixed = ['source' => 'upload', 'media_id' => $mid];
+                            $fv->upsert($id, null, null, null, json_encode($mixed, JSON_UNESCAPED_UNICODE));
+                            return;
+                        }
+                    }
+                    $row = $fv->get($id);
+                    if ($row && !empty($row['value_mixed_json'])) {
+                        $prev = json_decode((string) $row['value_mixed_json'], true);
+                        if (is_array($prev) && ($prev['source'] ?? '') === 'upload') {
+                            $fv->upsert($id, null, null, null, json_encode($prev, JSON_UNESCAPED_UNICODE));
+                            return;
+                        }
+                    }
+                    $fv->upsert($id, null, null, null, null);
+                    return;
+                }
+                $key = trim((string) $request->post('icon_key_' . $id, ''));
+                $set = trim((string) $request->post('icon_set_' . $id, ''));
+                $style = trim((string) $request->post('icon_style_' . $id, ''));
+                $mixed = ['source' => 'registry', 'iconKey' => $key];
+                if ($set !== '') {
+                    $mixed['iconSet'] = $set;
+                }
+                if ($style !== '') {
+                    $mixed['iconStyle'] = $style;
+                }
+                $fv->upsert($id, null, null, null, json_encode($mixed, JSON_UNESCAPED_UNICODE));
                 return;
             case 'foto':
                 $this->saveFotoField($fv, $id, $request, $userId);
@@ -295,6 +338,55 @@ trait ManagesDynamicFields
         if ($type === 'texto') {
             $text = trim((string) ($_POST['rp_' . $itemId . '_' . $subfieldDefId] ?? ''));
             $rep->upsertItemValue($itemId, $subfieldDefId, $text, null, null, null);
+            return;
+        }
+        if ($type === 'botao') {
+            $text = trim((string) ($_POST['rp_btn_text_' . $itemId . '_' . $subfieldDefId] ?? ''));
+            $url = trim((string) ($_POST['rp_btn_url_' . $itemId . '_' . $subfieldDefId] ?? ''));
+            $rep->upsertItemValue($itemId, $subfieldDefId, $text, $url, null, null);
+            return;
+        }
+        if ($type === 'icone') {
+            $src = (string) ($_POST['rp_icon_src_' . $itemId . '_' . $subfieldDefId] ?? 'registry');
+            if ($src === 'upload') {
+                $fk = 'rp_icon_svg_' . $itemId . '_' . $subfieldDefId;
+                if (isset($_FILES[$fk]) && (int) ($_FILES[$fk]['error'] ?? 0) === UPLOAD_ERR_OK) {
+                    $mid = MediaUpload::handle($_FILES[$fk], 'image', $userId);
+                    if ($mid !== null) {
+                        $m = (new Media())->findById($mid);
+                        if ($m !== null && strtolower((string) ($m['stored_name'] ?? '')) !== '' && !str_ends_with(strtolower((string) ($m['stored_name'] ?? '')), '.svg')) {
+                            $mid = null;
+                        }
+                    }
+                    if ($mid !== null) {
+                        $mixed = ['source' => 'upload', 'media_id' => $mid];
+                        $rep->upsertItemValue($itemId, $subfieldDefId, null, null, null, json_encode($mixed, JSON_UNESCAPED_UNICODE));
+                        return;
+                    }
+                }
+                $row = $rep->valuesMapForItem($itemId)[$subfieldDefId] ?? null;
+                if ($row && !empty($row['value_mixed_json'])) {
+                    $prev = json_decode((string) $row['value_mixed_json'], true);
+                    if (is_array($prev) && ($prev['source'] ?? '') === 'upload') {
+                        $rep->upsertItemValue($itemId, $subfieldDefId, null, null, null, json_encode($prev, JSON_UNESCAPED_UNICODE));
+                        return;
+                    }
+                }
+                $rep->upsertItemValue($itemId, $subfieldDefId, null, null, null, null);
+                return;
+            }
+
+            $key = trim((string) ($_POST['rp_icon_key_' . $itemId . '_' . $subfieldDefId] ?? ''));
+            $set = trim((string) ($_POST['rp_icon_set_' . $itemId . '_' . $subfieldDefId] ?? ''));
+            $style = trim((string) ($_POST['rp_icon_style_' . $itemId . '_' . $subfieldDefId] ?? ''));
+            $mixed = ['source' => 'registry', 'iconKey' => $key];
+            if ($set !== '') {
+                $mixed['iconSet'] = $set;
+            }
+            if ($style !== '') {
+                $mixed['iconStyle'] = $style;
+            }
+            $rep->upsertItemValue($itemId, $subfieldDefId, null, null, null, json_encode($mixed, JSON_UNESCAPED_UNICODE));
             return;
         }
         if ($type === 'foto') {

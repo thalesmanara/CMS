@@ -106,6 +106,34 @@ final class PageApiSerializer
         return $out;
     }
 
+    /** @return array<string,mixed>|null */
+    private static function expandIconMixed(?string $json): ?array
+    {
+        if ($json === null || $json === '') {
+            return null;
+        }
+        $d = json_decode($json, true);
+        if (!is_array($d)) {
+            return null;
+        }
+        $src = (string) ($d['source'] ?? 'registry');
+        if ($src === 'upload' && !empty($d['media_id'])) {
+            $mid = (int) $d['media_id'];
+            $m = (new Media())->findById($mid);
+            return [
+                'source' => 'upload',
+                'media_id' => $mid,
+                'svg_url' => $m !== null ? self::mediaPublicUrl((string) $m['relative_path']) : null,
+            ];
+        }
+        return [
+            'source' => 'registry',
+            'iconKey' => (string) ($d['iconKey'] ?? ''),
+            'iconSet' => isset($d['iconSet']) ? (string) $d['iconSet'] : null,
+            'iconStyle' => isset($d['iconStyle']) ? (string) $d['iconStyle'] : null,
+        ];
+    }
+
     /**
      * @param array<string,mixed> $def
      * @return array{nome:string,identificador:string,tipo:string,valor:mixed}
@@ -135,6 +163,9 @@ final class PageApiSerializer
                     'texto' => (string) ($valRow['value_text'] ?? ''),
                     'link' => (string) ($valRow['value_url'] ?? ''),
                 ];
+                break;
+            case 'icone':
+                $valor = self::expandIconMixed($valRow['value_mixed_json'] ?? null);
                 break;
             case 'foto':
                 $ids = self::decodeIdList($valRow['value_media_ids_json'] ?? null);
@@ -195,6 +226,17 @@ final class PageApiSerializer
                 $vr = $rowMap[$sid] ?? null;
                 if ($st === 'texto') {
                     $obj[$skey] = $vr ? (string) ($vr['value_text'] ?? '') : '';
+                    continue;
+                }
+                if ($st === 'botao') {
+                    $obj[$skey] = [
+                        'texto' => $vr ? (string) ($vr['value_text'] ?? '') : '',
+                        'link' => $vr ? (string) ($vr['value_url'] ?? '') : '',
+                    ];
+                    continue;
+                }
+                if ($st === 'icone') {
+                    $obj[$skey] = $vr ? self::expandIconMixed($vr['value_mixed_json'] ?? null) : null;
                     continue;
                 }
                 if ($st === 'foto') {

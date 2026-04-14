@@ -284,6 +284,7 @@ if (!function_exists('revita_crm_page_field_label')) {
       foreach ($sections as $s) {
         $orderedSectionIds[] = (int) $s['id'];
       }
+      $firstSectionRendered = true;
     ?>
     <?php foreach ($orderedSectionIds as $secId): ?>
       <?php
@@ -301,10 +302,11 @@ if (!function_exists('revita_crm_page_field_label')) {
       <?php if ($secBlocks === []): ?>
         <?php continue; ?>
       <?php endif; ?>
-      <div class="mb-3">
-        <h4 class="h6 mb-0"><?= Escape::html($secTitle) ?></h4>
+      <div class="mb-3" style="<?= $firstSectionRendered ? '' : 'margin-top:80px;' ?>">
+        <h3 class="mb-0"><?= Escape::html($secTitle) ?></h3>
         <div class="text-muted small">Campos desta seção</div>
       </div>
+      <?php $firstSectionRendered = false; ?>
       <?php foreach ($secBlocks as $b): ?>
       <?php
         $f = $b['field'];

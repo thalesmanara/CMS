@@ -20,6 +20,7 @@ use Revita\Crm\Models\FieldValue;
 use Revita\Crm\Models\Post;
 use Revita\Crm\Models\Repeater;
 use Revita\Crm\Models\Subcategory;
+use Revita\Crm\Models\Section;
 use Revita\Crm\Services\PageApiSerializer;
 
 final class PostController
@@ -27,7 +28,7 @@ final class PostController
     use ManagesDynamicFields;
 
     private const FIELD_TYPES = [
-        'texto', 'foto', 'galeria_fotos', 'video', 'galeria_videos', 'repetidor',
+        'texto', 'botao', 'foto', 'galeria_fotos', 'video', 'galeria_videos', 'repetidor',
     ];
 
     protected function fieldOwnerType(): string
@@ -140,6 +141,7 @@ final class PostController
             Url::redirect('/posts');
         }
         $blocks = $this->buildEditBlocks($id);
+        $sections = (new Section())->listByOwner(FieldDefinition::OWNER_POST, $id);
         $featuredPreview = PageApiSerializer::featuredImagePublicUrl(
             isset($row['featured_media_id']) && $row['featured_media_id'] !== null
                 ? (int) $row['featured_media_id']
@@ -153,6 +155,7 @@ final class PostController
             'categories' => (new Category())->all(),
             'subcategoriesRows' => (new Subcategory())->allWithCategory(),
             'blocks' => $blocks,
+            'sections' => $sections,
             'featuredPreview' => $featuredPreview,
             'flashOk' => Session::flash('ok'),
             'flashErr' => Session::flash('error'),
@@ -290,6 +293,8 @@ final class PostController
         }
         $key = trim((string) $request->post('field_key', ''));
         $key = $key === '' ? Slugger::slugify($label) : Slugger::slugify($key);
+        $sectionIdRaw = (int) $request->post('section_id', 0);
+        $sectionId = $sectionIdRaw > 0 ? $sectionIdRaw : null;
         if ($label === '' || $key === '' || !preg_match('/^[a-z0-9-]{2,120}$/', $key)) {
             Session::flash('post_field_error', 'Nome ou identificador do campo inválido.');
             Url::redirect('/posts/edit?id=' . $postId);
@@ -302,8 +307,8 @@ final class PostController
                 $key = $base . '-' . ($n++);
             }
         }
-        $ord = $fd->nextOrderIndexForPost($postId);
-        $fid = $fd->insertForPost($postId, $key, $label, $type, $ord);
+        $ord = $fd->nextOrderIndexForOwner(FieldDefinition::OWNER_POST, $postId, $sectionId);
+        $fid = $fd->insertForOwnerInSection(FieldDefinition::OWNER_POST, $postId, $sectionId, $key, $label, $type, $ord);
         $fv = new FieldValue();
         $fv->ensureRowExists($fid);
         if ($type === 'repetidor') {
@@ -311,6 +316,31 @@ final class PostController
             $rep->createDefinitionForField($fid);
         }
         Session::flash('ok', 'Campo adicionado.');
+        Url::redirect('/posts/edit?id=' . $postId);
+    }
+
+    public function addSection(Request $request): void
+    {
+        Auth::requireEditor();
+        if (!Csrf::validate((string) $request->post('_csrf'))) {
+            Session::flash('error', 'Sessão expirada.');
+            Url::redirect('/posts');
+        }
+        $postId = (int) $request->post('post_id', 0);
+        $p = new Post();
+        if ($p->findById($postId) === null) {
+            Session::flash('error', 'Post não encontrado.');
+            Url::redirect('/posts');
+        }
+        $title = trim((string) $request->post('section_title', ''));
+        if ($title === '' || mb_strlen($title, 'UTF-8') < 2) {
+            Session::flash('error', 'Nome da seção inválido.');
+            Url::redirect('/posts/edit?id=' . $postId);
+        }
+        $sec = new Section();
+        $ord = $sec->nextOrderIndex(FieldDefinition::OWNER_POST, $postId);
+        $sec->insert(FieldDefinition::OWNER_POST, $postId, $title, $ord);
+        Session::flash('ok', 'Seção adicionada.');
         Url::redirect('/posts/edit?id=' . $postId);
     }
 
@@ -345,8 +375,36 @@ final class PostController
             Url::redirect('/posts');
         }
         $postId = (int) $request->post('post_id', 0);
+        if ($postId < 1) {
+            Session::flash('error', 'Ordem inválida.');
+            Url::redirect('/posts');
+        }
+
+        // Novo formato (com seções)
+        $sectionOrder = $_POST['section_order'] ?? null;
+        $fieldSection = $_POST['field_section'] ?? null;
+        $fieldOrder = $_POST['field_order'] ?? null;
+        if (is_array($sectionOrder) && is_array($fieldSection) && is_array($fieldOrder)) {
+            $secIds = array_values(array_filter(array_map('intval', $sectionOrder), static fn (int $x) => $x > 0));
+            (new Section())->reorder(FieldDefinition::OWNER_POST, $postId, $secIds);
+            $map = [];
+            foreach ($fieldOrder as $fid => $ord) {
+                $fid = (int) $fid;
+                if ($fid < 1) {
+                    continue;
+                }
+                $sidRaw = isset($fieldSection[$fid]) ? (int) $fieldSection[$fid] : 0;
+                $sid = $sidRaw > 0 ? $sidRaw : null;
+                $map[$fid] = ['section_id' => $sid, 'order' => (int) $ord];
+            }
+            (new FieldDefinition())->applySectionAndOrderMap(FieldDefinition::OWNER_POST, $postId, $map);
+            Session::flash('ok', 'Ordem das seções e campos atualizada.');
+            Url::redirect('/posts/edit?id=' . $postId);
+        }
+
+        // Formato antigo (fallback)
         $order = $_POST['order'] ?? [];
-        if (!is_array($order) || $postId < 1) {
+        if (!is_array($order)) {
             Session::flash('error', 'Ordem inválida.');
             Url::redirect('/posts/edit?id=' . $postId);
         }

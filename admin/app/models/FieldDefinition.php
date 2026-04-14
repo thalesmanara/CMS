@@ -18,10 +18,16 @@ final class FieldDefinition
     {
         $pdo = Database::pdo();
         $stmt = $pdo->prepare(
-            'SELECT id, owner_type, owner_id, field_key, label_name, field_type, order_index
-             FROM revita_crm_field_definitions
-             WHERE owner_type = :ot AND owner_id = :oid
-             ORDER BY order_index ASC, id ASC'
+            'SELECT f.id, f.owner_type, f.owner_id, f.section_id, f.field_key, f.label_name, f.field_type, f.order_index,
+                    s.title AS section_title, s.order_index AS section_order
+             FROM revita_crm_field_definitions f
+             LEFT JOIN revita_crm_sections s ON s.id = f.section_id
+             WHERE f.owner_type = :ot AND f.owner_id = :oid
+             ORDER BY
+               CASE WHEN f.section_id IS NULL THEN 0 ELSE 1 END ASC,
+               COALESCE(s.order_index, 0) ASC,
+               f.order_index ASC,
+               f.id ASC'
         );
         $stmt->execute(['ot' => $ownerType, 'oid' => $ownerId]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -46,7 +52,7 @@ final class FieldDefinition
         }
         $pdo = Database::pdo();
         $stmt = $pdo->prepare(
-            'SELECT id, owner_type, owner_id, field_key, label_name, field_type, order_index
+            'SELECT id, owner_type, owner_id, section_id, field_key, label_name, field_type, order_index
              FROM revita_crm_field_definitions WHERE id = :id LIMIT 1'
         );
         $stmt->execute(['id' => $id]);
@@ -84,31 +90,41 @@ final class FieldDefinition
         return $this->fieldKeyExists(self::OWNER_POST, $postId, $key, $excludeId);
     }
 
-    public function nextOrderIndexForOwner(string $ownerType, int $ownerId): int
+    public function nextOrderIndexForOwner(string $ownerType, int $ownerId, ?int $sectionId = null): int
     {
         $pdo = Database::pdo();
-        $stmt = $pdo->prepare(
-            'SELECT COALESCE(MAX(order_index), 0) + 1 AS n
-             FROM revita_crm_field_definitions
-             WHERE owner_type = :ot AND owner_id = :oid'
-        );
-        $stmt->execute(['ot' => $ownerType, 'oid' => $ownerId]);
+        if ($sectionId === null) {
+            $stmt = $pdo->prepare(
+                'SELECT COALESCE(MAX(order_index), 0) + 1 AS n
+                 FROM revita_crm_field_definitions
+                 WHERE owner_type = :ot AND owner_id = :oid AND section_id IS NULL'
+            );
+            $stmt->execute(['ot' => $ownerType, 'oid' => $ownerId]);
+        } else {
+            $stmt = $pdo->prepare(
+                'SELECT COALESCE(MAX(order_index), 0) + 1 AS n
+                 FROM revita_crm_field_definitions
+                 WHERE owner_type = :ot AND owner_id = :oid AND section_id = :sid'
+            );
+            $stmt->execute(['ot' => $ownerType, 'oid' => $ownerId, 'sid' => $sectionId]);
+        }
         return (int) $stmt->fetchColumn();
     }
 
     public function nextOrderIndex(int $pageId): int
     {
-        return $this->nextOrderIndexForOwner(self::OWNER_PAGE, $pageId);
+        return $this->nextOrderIndexForOwner(self::OWNER_PAGE, $pageId, null);
     }
 
     public function nextOrderIndexForPost(int $postId): int
     {
-        return $this->nextOrderIndexForOwner(self::OWNER_POST, $postId);
+        return $this->nextOrderIndexForOwner(self::OWNER_POST, $postId, null);
     }
 
     public function insertForOwner(
         string $ownerType,
         int $ownerId,
+        ?int $sectionId,
         string $fieldKey,
         string $label,
         string $fieldType,
@@ -117,12 +133,13 @@ final class FieldDefinition
         $pdo = Database::pdo();
         $stmt = $pdo->prepare(
             'INSERT INTO revita_crm_field_definitions
-             (owner_type, owner_id, field_key, label_name, field_type, order_index, updated_at)
-             VALUES (:ot, :oid, :fk, :lb, :ft, :ord, NOW())'
+             (owner_type, owner_id, section_id, field_key, label_name, field_type, order_index, updated_at)
+             VALUES (:ot, :oid, :sid, :fk, :lb, :ft, :ord, NOW())'
         );
         $stmt->execute([
             'ot' => $ownerType,
             'oid' => $ownerId,
+            'sid' => $sectionId,
             'fk' => $fieldKey,
             'lb' => $label,
             'ft' => $fieldType,
@@ -133,12 +150,24 @@ final class FieldDefinition
 
     public function insert(int $pageId, string $fieldKey, string $label, string $fieldType, int $orderIndex): int
     {
-        return $this->insertForOwner(self::OWNER_PAGE, $pageId, $fieldKey, $label, $fieldType, $orderIndex);
+        return $this->insertForOwner(self::OWNER_PAGE, $pageId, null, $fieldKey, $label, $fieldType, $orderIndex);
     }
 
     public function insertForPost(int $postId, string $fieldKey, string $label, string $fieldType, int $orderIndex): int
     {
-        return $this->insertForOwner(self::OWNER_POST, $postId, $fieldKey, $label, $fieldType, $orderIndex);
+        return $this->insertForOwner(self::OWNER_POST, $postId, null, $fieldKey, $label, $fieldType, $orderIndex);
+    }
+
+    public function insertForOwnerInSection(
+        string $ownerType,
+        int $ownerId,
+        ?int $sectionId,
+        string $fieldKey,
+        string $label,
+        string $fieldType,
+        int $orderIndex
+    ): int {
+        return $this->insertForOwner($ownerType, $ownerId, $sectionId, $fieldKey, $label, $fieldType, $orderIndex);
     }
 
     /** @param list<int> $orderedIds */
@@ -156,6 +185,34 @@ final class FieldDefinition
                  WHERE id = :id AND owner_type = :ot AND owner_id = :pid'
             );
             $stmt->execute(['ord' => $ord++, 'id' => $fid, 'ot' => $ownerType, 'pid' => $ownerId]);
+        }
+    }
+
+    /**
+     * @param array<int, array{section_id:int|null, order:int}> $map
+     */
+    public function applySectionAndOrderMap(string $ownerType, int $ownerId, array $map): void
+    {
+        $pdo = Database::pdo();
+        foreach ($map as $fieldId => $m) {
+            $fid = (int) $fieldId;
+            if ($fid < 1) {
+                continue;
+            }
+            $sid = $m['section_id'];
+            $ord = (int) $m['order'];
+            $stmt = $pdo->prepare(
+                'UPDATE revita_crm_field_definitions
+                 SET section_id = :sid, order_index = :ord, updated_at = NOW()
+                 WHERE id = :id AND owner_type = :ot AND owner_id = :oid'
+            );
+            $stmt->execute([
+                'sid' => $sid,
+                'ord' => $ord,
+                'id' => $fid,
+                'ot' => $ownerType,
+                'oid' => $ownerId,
+            ]);
         }
     }
 

@@ -17,13 +17,14 @@ use Revita\Crm\Models\FieldDefinition;
 use Revita\Crm\Models\FieldValue;
 use Revita\Crm\Models\Page;
 use Revita\Crm\Models\Repeater;
+use Revita\Crm\Models\Section;
 
 final class PageController
 {
     use ManagesDynamicFields;
 
     private const FIELD_TYPES = [
-        'texto', 'foto', 'galeria_fotos', 'video', 'galeria_videos', 'repetidor',
+        'texto', 'botao', 'foto', 'galeria_fotos', 'video', 'galeria_videos', 'repetidor',
     ];
 
     protected function fieldOwnerType(): string
@@ -101,12 +102,14 @@ final class PageController
             Url::redirect('/pages');
         }
         $blocks = $this->buildEditBlocks($id);
+        $sections = (new Section())->listByOwner(FieldDefinition::OWNER_PAGE, $id);
         $html = View::layout('admin', 'pages/edit', [
             'title' => 'Editar página — Revita CMS',
             'nav' => 'pages',
             'user' => Auth::user(),
             'page' => $row,
             'blocks' => $blocks,
+            'sections' => $sections,
             'flashOk' => Session::flash('ok'),
             'flashErr' => Session::flash('error'),
             'metaError' => Session::flash('page_meta_error'),
@@ -201,6 +204,8 @@ final class PageController
         }
         $key = trim((string) $request->post('field_key', ''));
         $key = $key === '' ? Slugger::slugify($label) : Slugger::slugify($key);
+        $sectionIdRaw = (int) $request->post('section_id', 0);
+        $sectionId = $sectionIdRaw > 0 ? $sectionIdRaw : null;
         if ($label === '' || $key === '' || !preg_match('/^[a-z0-9-]{2,120}$/', $key)) {
             Session::flash('page_field_error', 'Nome ou identificador do campo inválido.');
             Url::redirect('/pages/edit?id=' . $pageId);
@@ -213,8 +218,8 @@ final class PageController
                 $key = $base . '-' . ($n++);
             }
         }
-        $ord = $fd->nextOrderIndex($pageId);
-        $fid = $fd->insert($pageId, $key, $label, $type, $ord);
+        $ord = $fd->nextOrderIndexForOwner(FieldDefinition::OWNER_PAGE, $pageId, $sectionId);
+        $fid = $fd->insertForOwnerInSection(FieldDefinition::OWNER_PAGE, $pageId, $sectionId, $key, $label, $type, $ord);
         $fv = new FieldValue();
         $fv->ensureRowExists($fid);
         if ($type === 'repetidor') {
@@ -222,6 +227,31 @@ final class PageController
             $rep->createDefinitionForField($fid);
         }
         Session::flash('ok', 'Campo adicionado.');
+        Url::redirect('/pages/edit?id=' . $pageId);
+    }
+
+    public function addSection(Request $request): void
+    {
+        Auth::requireEditor();
+        if (!Csrf::validate((string) $request->post('_csrf'))) {
+            Session::flash('error', 'Sessão expirada.');
+            Url::redirect('/pages');
+        }
+        $pageId = (int) $request->post('page_id', 0);
+        $p = new Page();
+        if ($p->findById($pageId) === null) {
+            Session::flash('error', 'Página não encontrada.');
+            Url::redirect('/pages');
+        }
+        $title = trim((string) $request->post('section_title', ''));
+        if ($title === '' || mb_strlen($title, 'UTF-8') < 2) {
+            Session::flash('error', 'Nome da seção inválido.');
+            Url::redirect('/pages/edit?id=' . $pageId);
+        }
+        $sec = new Section();
+        $ord = $sec->nextOrderIndex(FieldDefinition::OWNER_PAGE, $pageId);
+        $sec->insert(FieldDefinition::OWNER_PAGE, $pageId, $title, $ord);
+        Session::flash('ok', 'Seção adicionada.');
         Url::redirect('/pages/edit?id=' . $pageId);
     }
 
@@ -256,8 +286,36 @@ final class PageController
             Url::redirect('/pages');
         }
         $pageId = (int) $request->post('page_id', 0);
+        if ($pageId < 1) {
+            Session::flash('error', 'Ordem inválida.');
+            Url::redirect('/pages');
+        }
+
+        // Novo formato (com seções)
+        $sectionOrder = $_POST['section_order'] ?? null;
+        $fieldSection = $_POST['field_section'] ?? null;
+        $fieldOrder = $_POST['field_order'] ?? null;
+        if (is_array($sectionOrder) && is_array($fieldSection) && is_array($fieldOrder)) {
+            $secIds = array_values(array_filter(array_map('intval', $sectionOrder), static fn (int $x) => $x > 0));
+            (new Section())->reorder(FieldDefinition::OWNER_PAGE, $pageId, $secIds);
+            $map = [];
+            foreach ($fieldOrder as $fid => $ord) {
+                $fid = (int) $fid;
+                if ($fid < 1) {
+                    continue;
+                }
+                $sidRaw = isset($fieldSection[$fid]) ? (int) $fieldSection[$fid] : 0;
+                $sid = $sidRaw > 0 ? $sidRaw : null;
+                $map[$fid] = ['section_id' => $sid, 'order' => (int) $ord];
+            }
+            (new FieldDefinition())->applySectionAndOrderMap(FieldDefinition::OWNER_PAGE, $pageId, $map);
+            Session::flash('ok', 'Ordem das seções e campos atualizada.');
+            Url::redirect('/pages/edit?id=' . $pageId);
+        }
+
+        // Formato antigo (fallback)
         $order = $_POST['order'] ?? [];
-        if (!is_array($order) || $pageId < 1) {
+        if (!is_array($order)) {
             Session::flash('error', 'Ordem inválida.');
             Url::redirect('/pages/edit?id=' . $pageId);
         }

@@ -11,6 +11,7 @@ use Revita\Crm\Services\PageApiSerializer;
 /** @var list<array<string,mixed>> $categories */
 /** @var list<array<string,mixed>> $subcategoriesRows */
 /** @var string|null $featuredPreview */
+/** @var list<array<string,mixed>> $sections */
 /** @var string $csrfToken */
 /** @var bool $isAdmin */
 /** @var string|null $flashOk */
@@ -21,6 +22,16 @@ use Revita\Crm\Services\PageApiSerializer;
 
 $formContent = 'post-content-form';
 $postId = (int) $post['id'];
+$sections = isset($sections) && is_array($sections) ? $sections : [];
+
+$blocksBySection = [];
+foreach ($blocks as $b) {
+    $sid = isset($b['field']['section_id']) && $b['field']['section_id'] !== null ? (int) $b['field']['section_id'] : 0;
+    if (!isset($blocksBySection[$sid])) {
+        $blocksBySection[$sid] = [];
+    }
+    $blocksBySection[$sid][] = $b;
+}
 $pubAt = '';
 if (!empty($post['published_at'])) {
     $ts = strtotime((string) $post['published_at']);
@@ -33,6 +44,7 @@ if (!function_exists('revita_crm_page_field_label')) {
     function revita_crm_page_field_label(string $t): string {
         return match ($t) {
             'texto' => 'Texto',
+            'botao' => 'Botão',
             'foto' => 'Foto',
             'galeria_fotos' => 'Galeria de fotos',
             'video' => 'Vídeo',
@@ -154,7 +166,23 @@ if (!function_exists('revita_crm_page_field_label')) {
 
 <div class="card border-0 shadow-sm mb-4" style="border-radius:12px;">
   <div class="card-body p-4">
-    <h3 class="h6 mb-3">Campos</h3>
+    <h3 class="h6 mb-3">Seções e Campos</h3>
+
+    <form method="post" action="<?= Escape::html(Url::to('/posts/add-section')) ?>" class="mb-4">
+      <input type="hidden" name="_csrf" value="<?= Escape::html($csrfToken) ?>">
+      <input type="hidden" name="post_id" value="<?= $postId ?>">
+      <h4 class="small text-secondary mb-2">Adicionar seção</h4>
+      <div class="row g-2 align-items-end">
+        <div class="col-md-10">
+          <label class="form-label" for="section_title">Nome da seção</label>
+          <input class="form-control" id="section_title" name="section_title" required placeholder="Ex.: Hero / Sobre / Rodapé">
+        </div>
+        <div class="col-md-2">
+          <button type="submit" class="btn btn-outline-secondary w-100">Adicionar</button>
+        </div>
+      </div>
+    </form>
+
     <form method="post" action="<?= Escape::html(Url::to('/posts/add-field')) ?>" class="mb-4">
       <input type="hidden" name="_csrf" value="<?= Escape::html($csrfToken) ?>">
       <input type="hidden" name="post_id" value="<?= $postId ?>">
@@ -163,6 +191,15 @@ if (!function_exists('revita_crm_page_field_label')) {
         <div class="alert alert-danger py-2"><?= Escape::html($fieldError) ?></div>
       <?php endif; ?>
       <div class="row g-2 align-items-end">
+        <div class="col-md-3">
+          <label class="form-label" for="section_id">Seção</label>
+          <select class="form-select" id="section_id" name="section_id">
+            <option value="0">(sem seção)</option>
+            <?php foreach ($sections as $s): ?>
+              <option value="<?= (int) $s['id'] ?>"><?= Escape::html((string) $s['title']) ?></option>
+            <?php endforeach; ?>
+          </select>
+        </div>
         <div class="col-md-4">
           <label class="form-label" for="label_name">Nome (label)</label>
           <input class="form-control" id="label_name" name="label_name" required placeholder="Ex.: Texto principal">
@@ -171,10 +208,10 @@ if (!function_exists('revita_crm_page_field_label')) {
           <label class="form-label" for="field_key">Identificador <span class="text-muted small">(opcional)</span></label>
           <input class="form-control" id="field_key" name="field_key" pattern="[a-z0-9-]*" placeholder="auto">
         </div>
-        <div class="col-md-3">
+        <div class="col-md-2">
           <label class="form-label" for="field_type">Tipo</label>
           <select class="form-select" id="field_type" name="field_type">
-            <?php foreach (['texto', 'foto', 'galeria_fotos', 'video', 'galeria_videos', 'repetidor'] as $ft): ?>
+            <?php foreach (['texto', 'botao', 'foto', 'galeria_fotos', 'video', 'galeria_videos', 'repetidor'] as $ft): ?>
               <option value="<?= Escape::html($ft) ?>"><?= Escape::html(revita_crm_page_field_label($ft)) ?></option>
             <?php endforeach; ?>
           </select>
@@ -188,15 +225,41 @@ if (!function_exists('revita_crm_page_field_label')) {
     <form method="post" action="<?= Escape::html(Url::to('/posts/reorder-fields')) ?>" id="form-reorder">
       <input type="hidden" name="_csrf" value="<?= Escape::html($csrfToken) ?>">
       <input type="hidden" name="post_id" value="<?= $postId ?>">
-      <h4 class="small text-secondary mb-2">Ordem dos campos</h4>
-      <ul class="list-group mb-2" id="sort-fields" style="max-width:640px;">
-        <?php foreach ($blocks as $b): ?>
-          <?php $fid = (int) $b['field']['id']; ?>
-          <li class="list-group-item d-flex justify-content-between align-items-center" data-field-id="<?= $fid ?>">
-            <span><span class="text-muted me-2">↕</span><?= Escape::html((string) $b['field']['label_name']) ?> <small class="text-muted">(<?= Escape::html(revita_crm_page_field_label((string) $b['field']['field_type'])) ?>)</small></span>
-          </li>
+      <h4 class="small text-secondary mb-2">Ordem das seções e campos</h4>
+      <div id="sort-sections" style="max-width:720px;">
+        <div class="border rounded p-3 mb-3 bg-light" data-section-id="0">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <strong>(sem seção)</strong>
+            <span class="text-muted small">Campos soltos</span>
+          </div>
+          <ul class="list-group" data-fields-list="1" data-section-id="0">
+            <?php foreach ($blocksBySection[0] ?? [] as $b): ?>
+              <?php $fid = (int) $b['field']['id']; ?>
+              <li class="list-group-item d-flex justify-content-between align-items-center" data-field-id="<?= $fid ?>">
+                <span><span class="text-muted me-2">↕</span><?= Escape::html((string) $b['field']['label_name']) ?> <small class="text-muted">(<?= Escape::html(revita_crm_page_field_label((string) $b['field']['field_type'])) ?>)</small></span>
+              </li>
+            <?php endforeach; ?>
+          </ul>
+        </div>
+
+        <?php foreach ($sections as $s): ?>
+          <?php $sid = (int) $s['id']; ?>
+          <div class="border rounded p-3 mb-3" data-section-id="<?= $sid ?>">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <strong><span class="text-muted me-2">↕</span><?= Escape::html((string) $s['title']) ?></strong>
+              <span class="text-muted small">Seção</span>
+            </div>
+            <ul class="list-group" data-fields-list="1" data-section-id="<?= $sid ?>">
+              <?php foreach ($blocksBySection[$sid] ?? [] as $b): ?>
+                <?php $fid = (int) $b['field']['id']; ?>
+                <li class="list-group-item d-flex justify-content-between align-items-center" data-field-id="<?= $fid ?>">
+                  <span><span class="text-muted me-2">↕</span><?= Escape::html((string) $b['field']['label_name']) ?> <small class="text-muted">(<?= Escape::html(revita_crm_page_field_label((string) $b['field']['field_type'])) ?>)</small></span>
+                </li>
+              <?php endforeach; ?>
+            </ul>
+          </div>
         <?php endforeach; ?>
-      </ul>
+      </div>
       <div id="reorder-hidden"></div>
       <button type="button" class="btn btn-sm btn-outline-primary" id="btn-save-order">Aplicar ordem</button>
     </form>
@@ -215,7 +278,33 @@ if (!function_exists('revita_crm_page_field_label')) {
 <div class="card border-0 shadow-sm mb-4" style="border-radius:12px;">
   <div class="card-body p-4">
     <h3 class="h6 mb-3">Conteúdo</h3>
-    <?php foreach ($blocks as $b): ?>
+    <?php
+      $orderedSectionIds = [0];
+      foreach ($sections as $s) {
+        $orderedSectionIds[] = (int) $s['id'];
+      }
+    ?>
+    <?php foreach ($orderedSectionIds as $secId): ?>
+      <?php
+        $secTitle = $secId === 0 ? '(sem seção)' : '';
+        if ($secId !== 0) {
+          foreach ($sections as $s) {
+            if ((int) $s['id'] === $secId) {
+              $secTitle = (string) $s['title'];
+              break;
+            }
+          }
+        }
+        $secBlocks = $blocksBySection[$secId] ?? [];
+      ?>
+      <?php if ($secBlocks === []): ?>
+        <?php continue; ?>
+      <?php endif; ?>
+      <div class="mb-3">
+        <h4 class="h6 mb-0"><?= Escape::html($secTitle) ?></h4>
+        <div class="text-muted small">Campos desta seção</div>
+      </div>
+      <?php foreach ($secBlocks as $b): ?>
       <?php
         $f = $b['field'];
         $fid = (int) $f['id'];
@@ -262,6 +351,17 @@ if (!function_exists('revita_crm_page_field_label')) {
         ?>
         <?php if ($ftype === 'texto'): ?>
           <textarea class="form-control" name="fv_text_<?= $fid ?>" form="<?= Escape::html($formContent) ?>" rows="6"><?= $v ? Escape::html((string) ($v['value_text'] ?? '')) : '' ?></textarea>
+        <?php elseif ($ftype === 'botao'): ?>
+          <div class="row g-2">
+            <div class="col-md-5">
+              <label class="form-label small mb-1">Texto do botão</label>
+              <input class="form-control" name="btn_text_<?= $fid ?>" form="<?= Escape::html($formContent) ?>" value="<?= $v ? Escape::html((string) ($v['value_text'] ?? '')) : '' ?>" placeholder="Ex.: Saiba mais">
+            </div>
+            <div class="col-md-7">
+              <label class="form-label small mb-1">Link</label>
+              <input class="form-control font-monospace" type="url" name="btn_url_<?= $fid ?>" form="<?= Escape::html($formContent) ?>" value="<?= $v ? Escape::html((string) ($v['value_url'] ?? '')) : '' ?>" placeholder="https://...">
+            </div>
+          </div>
         <?php elseif ($ftype === 'foto'): ?>
           <?php if ($mid): ?>
             <?php $mrow = (new \Revita\Crm\Models\Media())->findById($mid); ?>
@@ -505,6 +605,7 @@ if (!function_exists('revita_crm_page_field_label')) {
           <?php endif; ?>
         </div>
       </div>
+      <?php endforeach; ?>
     <?php endforeach; ?>
   </div>
 </div>
@@ -516,20 +617,53 @@ if (!function_exists('revita_crm_page_field_label')) {
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
 <script>
 (function () {
-  var el = document.getElementById('sort-fields');
-  if (!el || typeof Sortable === 'undefined') return;
-  new Sortable(el, { animation: 150 });
+  var sectionsRoot = document.getElementById('sort-sections');
+  if (!sectionsRoot || typeof Sortable === 'undefined') return;
+
+  new Sortable(sectionsRoot, {
+    animation: 150,
+    handle: 'strong',
+    draggable: '[data-section-id]:not([data-section-id="0"])'
+  });
+
+  sectionsRoot.querySelectorAll('ul[data-fields-list="1"]').forEach(function (ul) {
+    new Sortable(ul, { animation: 150 });
+  });
+
   var btn = document.getElementById('btn-save-order');
   if (btn) btn.addEventListener('click', function () {
     var wrap = document.getElementById('reorder-hidden');
     wrap.innerHTML = '';
-    el.querySelectorAll('li[data-field-id]').forEach(function (li) {
-      var inp = document.createElement('input');
-      inp.type = 'hidden';
-      inp.name = 'order[]';
-      inp.value = li.getAttribute('data-field-id');
-      wrap.appendChild(inp);
+
+    sectionsRoot.querySelectorAll('[data-section-id]').forEach(function (secEl) {
+      var sid = secEl.getAttribute('data-section-id');
+      if (!sid || sid === '0') return;
+      var inpS = document.createElement('input');
+      inpS.type = 'hidden';
+      inpS.name = 'section_order[]';
+      inpS.value = sid;
+      wrap.appendChild(inpS);
     });
+
+    sectionsRoot.querySelectorAll('ul[data-fields-list="1"]').forEach(function (ul) {
+      var sid = ul.getAttribute('data-section-id') || '0';
+      ul.querySelectorAll('li[data-field-id]').forEach(function (li, idx) {
+        var fid = li.getAttribute('data-field-id');
+        if (!fid) return;
+        var inpSec = document.createElement('input');
+        inpSec.type = 'hidden';
+        inpSec.name = 'field_section[' + fid + ']';
+        inpSec.value = sid;
+        wrap.appendChild(inpSec);
+
+        var inpOrd = document.createElement('input');
+        inpOrd.type = 'hidden';
+        inpOrd.name = 'field_order[' + fid + ']';
+        inpOrd.value = String(idx);
+        wrap.appendChild(inpOrd);
+      });
+    });
+
     document.getElementById('form-reorder').submit();
   });
 })();

@@ -90,6 +90,11 @@ trait ManagesDynamicFields
                 $text = trim((string) $request->post('fv_text_' . $id, ''));
                 $fv->upsert($id, $text, null, null, null);
                 return;
+            case 'botao':
+                $text = trim((string) $request->post('btn_text_' . $id, ''));
+                $url = trim((string) $request->post('btn_url_' . $id, ''));
+                $fv->upsert($id, $text, $url, null, null);
+                return;
             case 'foto':
                 $this->saveFotoField($fv, $id, $request, $userId);
                 return;

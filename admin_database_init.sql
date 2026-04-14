@@ -117,15 +117,31 @@ CREATE TABLE IF NOT EXISTS revita_crm_posts (
   KEY idx_posts_subcategory (subcategory_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- 6) Seções (agrupamento de campos por página/post)
+CREATE TABLE IF NOT EXISTS revita_crm_sections (
+  id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  owner_type ENUM('page','post') NOT NULL,
+  owner_id INT UNSIGNED NOT NULL,
+  title VARCHAR(190) NOT NULL,
+  order_index INT UNSIGNED NOT NULL DEFAULT 0,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NULL,
+  PRIMARY KEY (id),
+  KEY idx_sections_owner (owner_type, owner_id),
+  KEY idx_sections_order (owner_type, owner_id, order_index)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 -- 6) Definições de campos dinâmicos
 CREATE TABLE IF NOT EXISTS revita_crm_field_definitions (
   id INT UNSIGNED NOT NULL AUTO_INCREMENT,
   owner_type ENUM('page','post') NOT NULL,
   owner_id INT UNSIGNED NOT NULL,
+  section_id INT UNSIGNED NULL,
   field_key VARCHAR(120) NOT NULL,
   label_name VARCHAR(190) NOT NULL,
   field_type ENUM(
     'texto',
+    'botao',
     'foto',
     'galeria_fotos',
     'video',
@@ -138,6 +154,7 @@ CREATE TABLE IF NOT EXISTS revita_crm_field_definitions (
   PRIMARY KEY (id),
   UNIQUE KEY uq_field_def_owner (owner_type, owner_id, field_key),
   KEY idx_field_def_owner (owner_type, owner_id),
+  KEY idx_field_def_section (section_id),
   KEY idx_field_def_type (field_type)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 

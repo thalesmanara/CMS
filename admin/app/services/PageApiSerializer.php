@@ -12,6 +12,7 @@ use Revita\Crm\Models\Media;
 use Revita\Crm\Models\Page;
 use Revita\Crm\Models\Post;
 use Revita\Crm\Models\Repeater;
+use Revita\Crm\Models\Section;
 
 final class PageApiSerializer
 {
@@ -129,6 +130,12 @@ final class PageApiSerializer
             case 'texto':
                 $valor = (string) ($valRow['value_text'] ?? '');
                 break;
+            case 'botao':
+                $valor = [
+                    'texto' => (string) ($valRow['value_text'] ?? ''),
+                    'link' => (string) ($valRow['value_url'] ?? ''),
+                ];
+                break;
             case 'foto':
                 $ids = self::decodeIdList($valRow['value_media_ids_json'] ?? null);
                 $urls = self::urlsForMediaIds($ids);
@@ -235,6 +242,22 @@ final class PageApiSerializer
         return self::buildCamposFromDefinitions($fd->listByPostId($postId));
     }
 
+    /** @return list<array<string,mixed>> */
+    public static function buildSecoes(int $pageId): array
+    {
+        $defs = (new FieldDefinition())->listByPageId($pageId);
+        $sections = (new Section())->listByOwner(FieldDefinition::OWNER_PAGE, $pageId);
+        return self::buildSecoesFromDefinitions($defs, $sections);
+    }
+
+    /** @return list<array<string,mixed>> */
+    public static function buildSecoesForPost(int $postId): array
+    {
+        $defs = (new FieldDefinition())->listByPostId($postId);
+        $sections = (new Section())->listByOwner(FieldDefinition::OWNER_POST, $postId);
+        return self::buildSecoesFromDefinitions($defs, $sections);
+    }
+
     /**
      * @param list<array<string,mixed>> $defs
      * @return list<array<string,mixed>>
@@ -252,6 +275,67 @@ final class PageApiSerializer
             $campos[] = self::mapScalarField($def, $val);
         }
         return $campos;
+    }
+
+    /**
+     * @param list<array<string,mixed>> $defs
+     * @param list<array<string,mixed>> $sectionsRows
+     * @return list<array<string,mixed>>
+     */
+    private static function buildSecoesFromDefinitions(array $defs, array $sectionsRows): array
+    {
+        $fv = new FieldValue();
+
+        $sectionsById = [];
+        foreach ($sectionsRows as $s) {
+            $sid = (int) ($s['id'] ?? 0);
+            if ($sid < 1) {
+                continue;
+            }
+            $sectionsById[$sid] = [
+                'id' => $sid,
+                'nome' => (string) ($s['title'] ?? ''),
+                'ordem' => (int) ($s['order_index'] ?? 0),
+                'campos' => [],
+            ];
+        }
+
+        $loose = [
+            'id' => null,
+            'nome' => '(sem seção)',
+            'ordem' => -1,
+            'campos' => [],
+        ];
+
+        foreach ($defs as $def) {
+            $campo = null;
+            if ((string) $def['field_type'] === 'repetidor') {
+                $campo = self::mapRepeaterField($def);
+            } else {
+                $val = $fv->get((int) $def['id']);
+                $campo = self::mapScalarField($def, $val);
+            }
+
+            $sid = isset($def['section_id']) && $def['section_id'] !== null ? (int) $def['section_id'] : 0;
+            if ($sid > 0 && isset($sectionsById[$sid])) {
+                $sectionsById[$sid]['campos'][] = $campo;
+            } else {
+                $loose['campos'][] = $campo;
+            }
+        }
+
+        $out = [];
+        if ($loose['campos'] !== []) {
+            $out[] = $loose;
+        }
+
+        // keep section order as defined in DB
+        $ordered = array_values($sectionsById);
+        usort($ordered, static fn (array $a, array $b) => ($a['ordem'] <=> $b['ordem']) ?: (($a['id'] ?? 0) <=> ($b['id'] ?? 0)));
+        foreach ($ordered as $s) {
+            $out[] = $s;
+        }
+        return $out;
     }
 
     /** @return array<string, mixed>|null */
@@ -276,6 +360,7 @@ final class PageApiSerializer
             'slug' => (string) $row['slug'],
             'status' => (string) $row['status'],
             'campos' => self::buildCampos($pid),
+            'secoes' => self::buildSecoes($pid),
         ];
     }
 
@@ -323,6 +408,7 @@ final class PageApiSerializer
         ];
         if ($withCampos) {
             $out['campos'] = self::buildCamposForPost($pid);
+            $out['secoes'] = self::buildSecoesForPost($pid);
         }
         return $out;
     }

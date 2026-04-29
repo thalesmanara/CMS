@@ -355,7 +355,28 @@ if (!function_exists('revita_crm_page_field_label')) {
           </div>
         <?php elseif ($ftype === 'galeria_fotos'): ?>
           <input type="hidden" name="existing_gal_<?= $fid ?>" form="<?= Escape::html($formContent) ?>" value="<?= Escape::html(json_encode($galIds, JSON_UNESCAPED_UNICODE)) ?>">
-          <p class="small text-muted">Novas imagens serão acrescentadas às existentes.</p>
+          <?php if ($galIds !== []): ?>
+            <?php $grows = (new \Revita\Crm\Models\Media())->findByIdsOrdered($galIds); ?>
+            <div class="d-flex flex-wrap gap-2 mb-2" data-gal-wrap="1" data-gal-field-id="<?= $fid ?>">
+              <?php foreach ($grows as $gr): ?>
+                <?php
+                  $mid2 = (int) $gr['id'];
+                  $u = PageApiSerializer::mediaPublicUrl((string) $gr['relative_path']);
+                ?>
+                <div class="position-relative border rounded" style="width:84px;height:84px;overflow:hidden;">
+                  <img src="<?= Escape::html($u) ?>" alt="" style="width:100%;height:100%;object-fit:cover;">
+                  <button type="button"
+                          class="btn btn-sm btn-danger position-absolute top-0 end-0"
+                          style="padding:0 6px;line-height:1.2;border-radius:0 0 0 8px;"
+                          title="Remover"
+                          data-gal-remove="1"
+                          data-gal-field-id="<?= $fid ?>"
+                          data-gal-media-id="<?= $mid2 ?>">×</button>
+                </div>
+              <?php endforeach; ?>
+            </div>
+          <?php endif; ?>
+          <p class="small text-muted mb-1">Novas imagens serão acrescentadas às existentes.</p>
           <input type="file" class="form-control" name="gal_<?= $fid ?>[]" form="<?= Escape::html($formContent) ?>" accept="image/*" multiple>
         <?php elseif ($ftype === 'video'): ?>
           <?php
@@ -703,6 +724,34 @@ if (!function_exists('revita_crm_page_field_label')) {
     });
 
     document.getElementById('form-reorder').submit();
+  });
+})();
+</script>
+
+<script>
+(function () {
+  function updateHidden(fid, ids) {
+    var hidden = document.querySelector('input[name="existing_gal_' + fid + '"]');
+    if (!hidden) return;
+    hidden.value = JSON.stringify(ids);
+  }
+
+  document.addEventListener('click', function (e) {
+    var btn = e.target && e.target.closest ? e.target.closest('[data-gal-remove="1"]') : null;
+    if (!btn) return;
+    var fid = btn.getAttribute('data-gal-field-id');
+    var mid = btn.getAttribute('data-gal-media-id');
+    if (!fid || !mid) return;
+
+    var hidden = document.querySelector('input[name="existing_gal_' + fid + '"]');
+    if (!hidden) return;
+    var ids = [];
+    try { ids = JSON.parse(hidden.value || '[]'); } catch (err) { ids = []; }
+    ids = (Array.isArray(ids) ? ids : []).map(function (x) { return parseInt(x, 10); }).filter(function (x) { return x > 0 && String(x) !== String(mid); });
+    updateHidden(fid, ids);
+
+    var thumb = btn.closest('.position-relative');
+    if (thumb) thumb.remove();
   });
 })();
 </script>
